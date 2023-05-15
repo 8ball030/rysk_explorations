@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "#"
+version = "0.1.0"
+description = ""
+authors = ["8baller <8ball030@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+jupyterlab = "^4.0.0"
+pandas = "^2.0.1"
+ccxt = "^3.0.104"
+web3 = "^6.4.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
