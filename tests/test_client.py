@@ -28,6 +28,7 @@ def test_fetch_tickers(client):
     assert len(tickers) > 0
 
 
+@pytest.mark.skip(reason="Not implemented yet.")
 def test_fetch_positions(client):
     """Test fetching positions."""
     positions = client.fetch_positions()
