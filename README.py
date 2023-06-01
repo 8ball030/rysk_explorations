@@ -14,7 +14,7 @@
 # In[1]:
 
 
-get_ipython().system('poetry install && poetry run pip install -e .')
+get_ipython().system('pip install rysk-client')
 
 
 # # Usage
@@ -98,16 +98,4 @@ get_ipython().system('make test')
 
 
 get_ipython().system('make fmt lint')
-
-
-# In[9]:
-
-
-get_ipython().system('make build')
-
-
-# In[ ]:
-
-
-
 
