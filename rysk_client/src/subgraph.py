@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 import requests
 
-from rysk_client.src.constants import SUBGRAPH_URL
+from rysk_client.src.constants import DEFAULT_TIMEOUT, SUBGRAPH_URL
 
 MARKET_SUBGRAPH_QUERY = """
 {series 
@@ -25,6 +25,8 @@ MARKET_SUBGRAPH_QUERY = """
 
 @dataclass
 class SubgraphClient:
+    """Simple client to interact with the Rysk subgraph."""
+
     url: str = SUBGRAPH_URL
 
     def _query(self, query):
@@ -32,7 +34,10 @@ class SubgraphClient:
         headers = {"Content-Type": "application/json"}
         subgraph_query = {"query": query}
         response = requests.post(
-            url=self.url, headers=headers, data=json.dumps(subgraph_query)
+            url=self.url,
+            headers=headers,
+            data=json.dumps(subgraph_query),
+            timeout=DEFAULT_TIMEOUT,
         )
         data = json.loads(response.content)["data"]
         return data

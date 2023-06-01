@@ -1,3 +1,8 @@
+"""
+This file contains all the constants used in the rysk_client package.
+"""
+DEFAULT_TIMEOUT = 10
+DEFAULT_ENCODING = "utf-8"
 SUBGRAPH_URL = "https://api.goldsky.com/api/public/project_clhf7zaco0n9j490ce421agn4/subgraphs/devey/0.0.2/gn"
 NULL_ADDRESS = "0x0000000000000000000000000000000000000000"
 SUPPORTED_LEVERAGES = [1, 1.5, 2, 3]

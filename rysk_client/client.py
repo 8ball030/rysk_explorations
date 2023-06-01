@@ -3,13 +3,13 @@ Simple client for the rysk contracts implemented in python.
 """
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from rysk_client.src.subgraph import SubgraphClient
 from rysk_client.web3_client import Web3Client
 
-price_devisor = 1_000_000_000_000_000_000
-exposure_devisor = 100_000_000_000_000_0000
+PRICE_DEVISOR = 1_000_000_000_000_000_000
+EXPOSURE_DEVISOR = 1_000_000_000_000_000_000
 
 
 def from_timestamp(date_string):
@@ -26,15 +26,17 @@ def to_human_format(row):
     month_code = row["expiration_datetime"].strftime("%b").upper()
     day = row["expiration_datetime"].strftime("%d")
     year = str(row["expiration_datetime"].year)[2:]
-    strike_price = str(int(int(row["strike"]) / price_devisor))
+    strike_price = str(int(int(row["strike"]) / PRICE_DEVISOR))
 
     return f"ETH-{day}{month_code}{year}-{strike_price}-{'P' if row['isPut'] else 'C'}"
 
 
 @dataclass
 class EthCrypto:
-    address: str
-    private_key: str
+    """Represents a crypto wallet."""
+
+    address: Optional[str]
+    private_key: Optional[str]
 
 
 @dataclass
@@ -43,28 +45,32 @@ class RyskClient:
     Client for the rysk contracts.
     """
 
-    _markets: []
+    _markets: List[Dict[str, Any]]
+    _tickers: List[Dict[str, Any]]
 
-    def __init__(self, address: str = None, private_key: str = None):
+    def __init__(
+        self, address: Optional[str] = None, private_key: Optional[str] = None
+    ):
         self.subgraph_client = SubgraphClient()
         self.web3_client = Web3Client()
         self.verbose = True
         self._markets = []
+        self._tickers = []
         self._crypto = EthCrypto(address, private_key)
 
-    def fetch_markets(self) -> Dict[str, Any]:
+    def fetch_markets(self) -> List[Dict[str, Any]]:
         """
         Fetchs the markets from the subgraph.
         """
 
         raw_data = self.subgraph_client.query_markets()
-        data = map(self._parseMarket, raw_data)
+        data = map(self._parse_market, raw_data)
 
-        data = filter(lambda x: x["active"], data)
-        self._markets = list(data)
+        filtered_data = filter(lambda x: x["active"], data)
+        self._markets = list(filtered_data)
         return self._markets
 
-    def _parseMarket(self, raw_data: Dict[str, Any]) -> Dict[str, Any]:
+    def _parse_market(self, raw_data: Dict[str, Any]) -> Dict[str, Any]:
         """Parses the raw data from the subgraph into a market
         {'active': True,
          'base': 'ETH',
@@ -130,8 +136,6 @@ class RyskClient:
             "swap": False,
             "future": False,
             "type": "option",
-            "contractSize": 0.1,
-            "contract": True,
             "linear": False,
             "inverse": True,
         }
@@ -155,7 +159,7 @@ class RyskClient:
             {
                 "active": active,
                 "id": to_human_format(raw_data),
-                "strike": int(raw_data["strike"]) / price_devisor,
+                "strike": int(raw_data["strike"]) / PRICE_DEVISOR,
                 "optionType": "put" if raw_data["isPut"] else "call",
                 "expiry": int(raw_data["expiration"]) * 1000,
                 "expiryDatetime": expiration_datetime,
@@ -167,7 +171,7 @@ class RyskClient:
         )
         return default
 
-    def fetch_tickers(self) -> Dict[str, Any]:
+    def fetch_tickers(self) -> List[Dict[str, Any]]:
         """
         Fetchs the ticker from the beyond pricer smart contract.
             {'ask': None,
@@ -225,12 +229,12 @@ class RyskClient:
         if not self._markets:
             self.fetch_markets()
 
-        tickers = map(self._fetchTicker, self._markets)
+        tickers = map(self._fetch_ticker, self._markets)
 
         self._tickers = list(tickers)
         return self._tickers
 
-    def _fetchTicker(self, market: Dict[str, Any]) -> Dict[str, Any]:
+    def _fetch_ticker(self, market: Dict[str, Any]) -> Dict[str, Any]:
         """
         interact with the web3 api to fetch the ticker data
         """
