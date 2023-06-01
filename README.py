@@ -14,7 +14,7 @@
 # In[1]:
 
 
-pip install rysk-client
+get_ipython().system('pip install rysk-client')
 
 
 # # Usage
@@ -98,10 +98,4 @@ get_ipython().system('make test')
 
 
 get_ipython().system('make fmt lint')
-
-
-# In[8]:
-
-
-
 
