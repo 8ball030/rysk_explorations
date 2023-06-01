@@ -45,7 +45,7 @@ class RyskClient:
 
     _markets: []
 
-    def __init__(self, address: str, private_key: str = None):
+    def __init__(self, address: str = None, private_key: str = None):
         self.subgraph_client = SubgraphClient()
         self.web3_client = Web3Client()
         self.verbose = True

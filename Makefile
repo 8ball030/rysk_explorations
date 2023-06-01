@@ -48,9 +48,7 @@ test:
 	poetry run adev test -v -p tests
 
 build: fmt
-	poetry run jupyter-nbconvert README.ipynb --to markdown && poetry run jupyter-nbconvert README.ipynb --to python
+	poetry run jupyter-nbconvert README.ipynb --to markdown && poetry run jupyter-nbconvert README.ipynb --to python --execute
 
-
-
-test-docs:
+test-docs: build
 	poetry run ipython README.py
