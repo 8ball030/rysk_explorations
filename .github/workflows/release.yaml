@@ -43,18 +43,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install poetry
 
-      - name: build documentation
-        run: |
-          poetry install -E doc
-          poetry run mkdocs build
-
       - name: Build wheels and source tarball
         run: >-
           poetry build
 
-      - name: show temporary files
-        run: >-
-          ls -l
 
       - name: create github release
         id: create_release
