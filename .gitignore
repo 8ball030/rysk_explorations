@@ -1,4 +1,5 @@
 .env
+dist
 .ipynb_checkpoints/
 .vscode
 .idea
