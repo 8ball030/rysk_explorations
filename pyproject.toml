@@ -9,7 +9,7 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.9,<=3.11"
+python = ">=3.8,<4"
 web3 = "^5.4.0"
 ccxt = "^3.1.15"
 
