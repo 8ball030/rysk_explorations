@@ -58,8 +58,7 @@ ADDRESSES = {
         "address": "0xc939df369C0Fc240C975A6dEEEE77d87bCFaC259",
     },
     "opyn_controller": {
-        #         "path": "contracts/packages/opyn/core/Controller.sol/Controller.json",
-        "path": "contracts/tmp_controller.json",
+        "path": "contracts/packages/opyn/core/Controller.sol/Controller.json",
         "address": "0x11a602a5F5D823c103bb8b7184e22391Aae5F4C2",
     },
     "option_exchange": {
