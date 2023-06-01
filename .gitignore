@@ -2,4 +2,5 @@
 .ipynb_checkpoints/
 .vscode
 .idea
+.hypothesis
 **/__pycache__
