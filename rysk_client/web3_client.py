@@ -1,12 +1,10 @@
 """
 Web3 client for RyskFinance.
 """
-
-
-import json
-from copy import deepcopy
-
 from web3 import Web3, contract
+
+from rysk_client.src.collateral import Collateral
+from rysk_client.src.utils import get_contract, get_web3
 
 w3 = Web3(Web3.HTTPProvider("https://arbitrum-goerli.rpc.thirdweb.com"))
 
@@ -26,52 +24,25 @@ addresses = {
 }
 
 
-def get_contract(name):
-    spec = addresses[name]
-    with open(spec["path"], "r") as abi:
-        abi = json.loads(abi.read())["abi"]
-
-    res = deepcopy(spec)
-    del res["path"]
-    res["abi"] = abi
-    return w3.eth.contract(**res)
-
-
-from enum import Enum
-
-
-class Collateral(Enum):
-    eth = "eth"
-    usdc = "USDC"
-
-    @classmethod
-    def is_supported(cls, collateral):
-        """Is the sset supported"""
-        try:
-            cls(collateral)
-        except ValueError:
-            return False
-        return True
-
-
-def filter_by_human_format(df, human_format):
+def filter_by_human_format(data_frame, human_format):
     """
     Filter the DataFrame based on the human-readable format and return a single row.
     """
 
-    filtered_option = df[df["human_strike"] == human_format]
+    filtered_option = data_frame[data_frame["human_strike"] == human_format]
     if len(filtered_option) > 0:
         return filtered_option.iloc[0]  # Return the first row if found
-    else:
-        return None  # Return None if no matching row is found
+    return None  # Return None if no matching row is found
 
 
 class Web3Client:
-    beyond_pricer: contract.Contract = get_contract("beyond_pricer")
-    opyn_controller: contract.Contract = get_contract("opyn_controller")
+    """Client for the RyskFinance protocol."""
+
+    beyond_pricer: contract.Contract = get_contract("beyond_pricer", get_web3())
+    opyn_controller: contract.Contract = get_contract("opyn_controller", get_web3())
 
     def get_options_prices(
-        self, option_data, amount=1000000000000000000, side="buy", collateral="eth"
+        self, option_data, amount=1000000000000000000, side="buy", collateral="weth"
     ):
         """,
         We call the beyond pricer to determine the prices for a market
@@ -92,16 +63,12 @@ class Web3Client:
             "0x408c5755b5c7a0a28D851558eA3636CfC5b5b19d",
             "0x408c5755b5c7a0a28D851558eA3636CfC5b5b19d",
         )
-        #     print(option_series)
         result = self.beyond_pricer.functions.quoteOptionPrice(
             option_series,
             int(amount),
-            True if side == "sell" else False,
+            side == "sell",
             int(option_data["netDHVExposure"]),
         ).call()
-        # totalPremium
-        # totalDelta
-        # totalFees
         return result[0] / 1_000_000
 
     def get_positions(self, address):
