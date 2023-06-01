@@ -40,13 +40,10 @@ jobs:
         run: |
           poetry install -v
 
-#      - name: Format
-#        run: |
-#          poetry run adev format
-
       - name: Lint
         run: |
-          poetry run adev lint -p .
+          poetry run adev lint -p tests
+          poetry run adev lint -p rysk_client
 
       - name: Tests
         run: |
