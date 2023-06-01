@@ -1,14 +1,19 @@
+"""
+Module to manage positions.
+"""
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict
+from typing import Dict, List, Optional
 
-from ryk_client.src.collateral import Collateral
-from ryk_client.src.rysk_option_market import RyskOptionMarket
+from rysk_client.src.collateral import Collateral
+from rysk_client.src.rysk_option_market import RyskOptionMarket
 
 
 class OrderSide(Enum):
-    buy = "buy"
-    sell = "sell"
+    """Enum to represent the side of an order."""
+
+    BUY = "buy"
+    SELL = "sell"
 
 
 class Order:
@@ -22,26 +27,33 @@ class Order:
 
 
 class PositionSide(Enum):
-    long = "long"
-    short = "short"
+    """Enum to represent the side of a position."""
+
+    LONG = "long"
+    SHORT = "short"
 
 
 @dataclass
 class Position:
+    """Class to represent a position."""
+
+    option_market: RyskOptionMarket
+    orders: List[Order]
     side: PositionSide
     size: float = 0
     pnl: float = 0
-    collateral: str = "usdc"
-    option_market: RyskOptionMarket
-    orders: List[Order]
+    collateral: Collateral = Collateral.USDC
+    owner_address: Optional[str] = None
 
 
 class PositionManager:
-    positions: Dict[str, Position]
+    """Class to manage positions"""
+
+    positions: List[Position]
     collateral: Dict[str, float]
 
     def __init__(self):
-        self.positions = {}
+        self.positions = []
         self.collateral = {}
         self.pnl = {}
         self.collateral_value = 0
@@ -50,23 +62,21 @@ class PositionManager:
     def add_position(self, position: Position):
         """Adds a position to the position manager"""
 
-    def add_order(self, order: Order):
-        """Adds an order to the position manager"""
-
     def update_position(self, position: Position):
         """Updates a position in the position manager"""
 
-    def update_order(self, order: Order):
-        """Updates an order in the position manager"""
-
-    def get_positions(self, address: str) -> List[Position]:
+    def get_positions(self, address: Optional[str] = None) -> List[Position]:
         """Returns a list of positions"""
+        if address:
+            return [
+                position
+                for position in self.positions
+                if position.owner_address == address
+            ]
         return self.positions
 
     def _fetch_positions(self):
         """Fetches the positions from the API"""
-        pass
 
     def _fetch_orders(self):
         """Fetches the orders from the API"""
-        pass

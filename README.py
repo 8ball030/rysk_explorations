@@ -37,7 +37,6 @@ web3.isConnected()
 
 
 from rysk_client.client import RyskClient
-from tests.conftest import default_address
 
 client = RyskClient()
 client
@@ -51,7 +50,8 @@ client
 # In[4]:
 
 
-client.fetch_markets()
+markets = client.fetch_markets()
+markets[0]
 
 
 # ## Fetching Tickers
@@ -61,8 +61,8 @@ client.fetch_markets()
 # In[5]:
 
 
-tickets = client.fetch_tickers()
-tickets
+tickers = client.fetch_tickers()
+tickers[0]
 
 
 # ## Fetching Positions
