@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
+from rysk_client.src.position import PositionSide
 from rysk_client.src.subgraph import SubgraphClient
 from rysk_client.web3_client import Web3Client
 
@@ -244,6 +245,125 @@ class RyskClient:
 
     def fetch_positions(self) -> List[Dict[str, Any]]:
         """
-        Fetchs the positions from the opyn smart contract.
+        Fetchs the positions from the subgraph.
         """
-        return []
+
+        if self._crypto.address is None:
+            raise ValueError("No account address was provided.")
+
+        longs = self.subgraph_client.query_longs(address=self._crypto.address)
+        parsed_longs = [self._parse_position(pos, PositionSide.LONG) for pos in longs]
+        shorts = self.subgraph_client.query_shorts(address=self._crypto.address)
+        parsed_short = [self._parse_position(pos, PositionSide.SHORT) for pos in shorts]
+
+        return parsed_longs + parsed_short
+
+    def _parse_position(
+        self, position: Dict[str, Any], side: PositionSide
+    ) -> Dict[str, Any]:
+        """
+        Parse the position data from the subgraph into a unified format.
+        input:
+        {
+            "id": "0x588d91abf5192a0f0dc026bf05f510253bd1cf51-0x3fa148f692e516654283c9ff4cbe3b15355f48f5-s-0",
+            "netAmount": "-20000000000000000000",
+            "buyAmount": "0",
+            "sellAmount": "20000000000000000000",
+            "active": true,
+            "realizedPnl": "1744192333",
+            "oToken": {
+              "id": "0x3fa148f692e516654283c9ff4cbe3b15355f48f5",
+              "symbol": "oWETHUSDC/USDC-19MAY23-2000C",
+              "expiryTimestamp": "1684483200",
+              "strikePrice": "200000000000",
+              "isPut": false,
+              "underlyingAsset": {
+                "id": "0x3b3a1de07439eeb04492fa64a889ee25a130cdd3"
+              },
+              "createdAt": "1683555260"
+              },
+        },
+        output:
+        {
+                'info': {
+                        'vega': '-1.35589',
+                        'total_profit_loss': '-0.001586671',
+                        'theta': '1.66193',
+                        'size': '-1.0',
+                        'settlement_price': '0.013858',
+                        'realized_profit_loss': '0.0',
+                        'open_orders_margin': '0.0',
+                        'mark_price': '0.014587',
+                        'maintenance_margin': '0.089586671',
+                        'kind': 'option',
+                        'instrument_name': 'ETH-16JUN23-1950-C',
+                        'initial_margin': '0.13466616',
+                        'index_price': '1893.35',
+                        'gamma': '-0.00293',
+                        'floating_profit_loss_usd': '-3.950784',
+                        'floating_profit_loss': '-0.000728879',
+                        'direction': 'sell',
+                        'delta': '-0.34205',
+                        'average_price_usd': '23.66689',
+                        'average_price': '0.013'
+                },
+                'id': None,
+                'symbol': 'ETH/USD:ETH-230616-1950-C',
+                'timestamp': 1685704039684,
+                'datetime': '2023-06-02T11:07:19.684Z',
+                'lastUpdateTimestamp': None,
+                'initialMargin': 0.13466616,
+                'initialMarginPercentage': None,
+                'maintenanceMargin': 0.089586671,
+                'maintenanceMarginPercentage': None,
+                'entryPrice': 0.013,
+                'notional': None,
+                'leverage': None,
+                'unrealizedPnl': -0.000728879,
+                'contracts': None,
+                'contractSize': 1.0,
+                'marginRatio': None,
+                'liquidationPrice': None,
+                'markPrice': 0.014587,
+                'lastPrice': None,
+                'collateral': None,
+                'marginMode': None,
+                'side': 'short',
+                'percentage': None
+        }
+        """
+        position["expiration_datetime"] = datetime.fromtimestamp(
+            int(position["oToken"]["expiryTimestamp"])
+        )
+        position["strike"] = float(position["oToken"]["strikePrice"]) * 1e10
+        position["isPut"] = position["oToken"]["isPut"]
+
+        symbol = to_human_format(position)
+
+        result = {
+            "id": position["id"],
+            "symbol": symbol,
+            "timestamp": int(position["oToken"]["expiryTimestamp"]) * 1000,
+            "datetime": datetime.fromtimestamp(
+                int(position["oToken"]["expiryTimestamp"])
+            ),
+            "initialMarginPercentage": None,
+            "realizedPnl": float(position["realizedPnl"]) / 1e10,
+            "contractSize": position["netAmount"],
+            "side": side.value,
+            "info": position,
+            "contracts": None,
+            "marginRatio": None,
+            "liquidationPrice": None,
+            "lastPrice": None,
+            "collateral": None,
+            "marginMode": None,
+            "initialMargin": None,
+            "maintenanceMargin": None,
+            "maintenanceMarginPercentage": None,
+            "entryPrice": None,
+            "notional": None,
+            "leverage": None,
+            "percentage": None,
+        }
+        return result

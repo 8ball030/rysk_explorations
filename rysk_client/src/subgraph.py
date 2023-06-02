@@ -3,6 +3,7 @@ Module to interact with the Rysk subgraph.
 """
 import json
 from dataclasses import dataclass
+from typing import Any, Dict, List
 
 import requests
 
@@ -18,6 +19,88 @@ MARKET_SUBGRAPH_QUERY = """
     isPut
     isBuyable
     isSellable
+  }
+}
+"""
+
+SHORT_SUBGRAPH_QUERY = """
+{
+  shortPositions(
+    first: 1000,
+    where: {
+         account: "%s",
+         oToken_: {expiryTimestamp_gte: "1683273600"}
+         }
+    ){
+        id
+        netAmount
+        buyAmount
+        sellAmount
+        active
+        realizedPnl
+        oToken {
+            id
+            symbol
+            expiryTimestamp
+            strikePrice
+            isPut
+            underlyingAsset {
+                id
+            }
+            createdAt
+        }
+        settleActions {
+            id
+        }
+        optionsBoughtTransactions {
+            amount
+            premium
+        }
+        optionsSoldTransactions {
+            amount
+            premium
+        }
+  }
+}
+"""
+
+LONG_SUBGRAPH_QUERY = """
+{
+  longPositions(
+    first: 1000,
+    where: {
+         account: "%s",
+         oToken_: {expiryTimestamp_gte: "1683273600"}
+         }
+    ){
+        id
+        netAmount
+        buyAmount
+        sellAmount
+        active
+        realizedPnl
+        oToken {
+            id
+            symbol
+            expiryTimestamp
+            strikePrice
+            isPut
+            underlyingAsset {
+                id
+            }
+            createdAt
+        }
+        redeemActions {
+            id
+        }
+        optionsBoughtTransactions {
+            amount
+            premium
+        }
+        optionsSoldTransactions {
+            amount
+            premium
+        }
   }
 }
 """
@@ -45,3 +128,15 @@ class SubgraphClient:
     def query_markets(self):
         """Query the subgraph for markets."""
         return self._query(MARKET_SUBGRAPH_QUERY)["series"]
+
+    def query_longs(self, address: str) -> List[Dict[str, Any]]:
+        """Query the subgraph for longs."""
+        query = LONG_SUBGRAPH_QUERY % address.lower()
+        result = self._query(query)
+        return result["longPositions"]
+
+    def query_shorts(self, address: str) -> List[Dict[str, Any]]:
+        """Query the subgraph for shorts."""
+        query = SHORT_SUBGRAPH_QUERY % address.lower()
+        result = self._query(query)
+        return result["shortPositions"]

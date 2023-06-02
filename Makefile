@@ -24,7 +24,7 @@ clean-pyc:
 	find . -name '*.pyo' -exec rm -f {} +
 	find . -name '*~' -exec rm -f {} +
 	find . -name '__pycache__' -exec rm -fr {} +
-	find . -name '.DS_Store' -exec rm -fr {} +
+	find . -name '.DS_Store' -exec rm -fr {} + 
 
 .PHONY: clean-test
 clean-test:
@@ -43,6 +43,7 @@ fmt:
 	poetry run isort tests rysk_client && poetry run black tests rysk_client
 lint:
 	poetry run adev lint -v -p tests
+	poetry run adev lint -v -p rysk_client
 
 test: 
 	poetry run adev test -v -p tests
