@@ -78,3 +78,12 @@ def test_calculates_unrealised_pnl_with_multiple_trades(pnl_calculator):
     pnl_calculator.update_price(1040)
     assert pnl_calculator.unrealised_pnl == 30
     assert pnl_calculator.realised_pnl == 10
+
+
+def test_add_trades_method(pnl_calculator):
+    """
+    Test the add_trades method.
+    """
+    pnl_calculator.add_trades([Trade(1, 1000), Trade(-1, 1010)])
+    assert pnl_calculator.position_size == 0
+    assert pnl_calculator.realised_pnl == 10
