@@ -61,8 +61,7 @@ For dev build.
     Requirement already satisfied: base58 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from multiaddr>=0.0.7->ipfshttpclient==0.8.0a2->web3<6.0.0,>=5.4.0->rysk-client) (2.1.1)
     Requirement already satisfied: varint in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from multiaddr>=0.0.7->ipfshttpclient==0.8.0a2->web3<6.0.0,>=5.4.0->rysk-client) (1.0.2)
     [33mWARNING: Error parsing requirements for vulture: [Errno 2] No such file or directory: '/home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages/vulture-2.5.dist-info/METADATA'[0m[33m
-    [0m[33mWARNING: You are using pip version 22.0.4; however, version 23.1.2 is available.
-    You should consider upgrading via the '/home/tom/.pyenv/versions/3.10.4/bin/python3.10 -m pip install --upgrade pip' command.[0m[33m
+    [0m[33mWARNING: You are using pip version 22.0.4; however, version 23.1.2 is available.    You should consider upgrading via the '/home/tom/.pyenv/versions/3.10.4/bin/python3.10 -m pip install --upgrade pip' command.[0m[33m
     [0m
 
 # Usage
