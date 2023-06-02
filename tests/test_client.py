@@ -10,10 +10,10 @@ from rysk_client.client import RyskClient
 @pytest.fixture
 def client(default_address):
     """Get the rysk client."""
-    private_key = {
+    crypto = {
         "address": default_address,
     }
-    return RyskClient(**private_key)
+    return RyskClient(**crypto)
 
 
 def test_fetch_markets(client):
@@ -28,7 +28,6 @@ def test_fetch_tickers(client):
     assert len(tickers) > 0
 
 
-@pytest.mark.skip(reason="Not implemented yet.")
 def test_fetch_positions(client):
     """Test fetching positions."""
     positions = client.fetch_positions()

@@ -37,8 +37,13 @@ web3.isConnected()
 
 
 from rysk_client.client import RyskClient
+from tests.conftest import DEFAULT_ADDRESS
 
-client = RyskClient()
+auth = {
+    "address": DEFAULT_ADDRESS,
+}
+
+client = RyskClient(**auth)
 client
 
 
@@ -74,7 +79,6 @@ tickers[0]
 # 
 # Vaultid can be retrieved from;
 # 
-# #TODO
 # 
 # 
 # 
