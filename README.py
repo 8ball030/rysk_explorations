@@ -87,7 +87,7 @@ tickers[0]
 
 
 positions = client.fetch_positions()
-positions
+positions[0]
 
 
 # # Tests
