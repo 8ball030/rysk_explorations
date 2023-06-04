@@ -1,12 +1,20 @@
 """
 Simple client for the rysk contracts implemented in python.
 """
+import multiprocessing
+from concurrent.futures import ThreadPoolExecutor
+from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from rysk_client.src.position import PositionSide
+from rysk_client.src.action_types import ActionType
+from rysk_client.src.collateral import Collateral
+from rysk_client.src.constants import NULL_ADDRESS
+from rysk_client.src.pnl_calculator import PnlCalculator, Trade
+from rysk_client.src.position import OrderSide, PositionSide
 from rysk_client.src.subgraph import SubgraphClient
+from rysk_client.src.utils import get_logger
 from rysk_client.web3_client import Web3Client
 
 PRICE_DEVISOR = 1_000_000_000_000_000_000
@@ -40,6 +48,62 @@ class EthCrypto:
     private_key: Optional[str]
 
 
+DEFAULT_MARKET = {
+    "base": "ETH",
+    "baseId": "ETH",
+    "contract": True,
+    "contractSize": 1.0,
+    "spot": False,
+    "swap": False,
+    "future": False,
+    "type": "option",
+    "linear": False,
+    "inverse": True,
+    "maker": 0.0003,
+    "taker": 0.0003,
+}
+
+
+def parse_market(raw_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Parses the raw data from the subgraph into a market
+    """
+    active = all(
+        [
+            any(
+                [
+                    raw_data["isBuyable"],
+                    raw_data["isSellable"],
+                ]
+            ),
+            # we can get also filter out the expired options int(raw_data["expiration"]) > datetime.now().timestamp(),
+        ]
+    )
+    expiration_datetime = from_timestamp(raw_data["expiration"])
+    raw_data.update(
+        {
+            "expiration_datetime": datetime.strptime(
+                expiration_datetime, "%Y-%m-%dT%H:%M:%S.%fZ"
+            )
+        }
+    )
+    market = deepcopy(DEFAULT_MARKET)
+
+    market.update(
+        {
+            "active": active,
+            "id": to_human_format(raw_data),
+            "strike": int(raw_data["strike"]) / PRICE_DEVISOR,
+            "optionType": "put" if raw_data["isPut"] else "call",
+            "expiry": int(raw_data["expiration"]) * 1000,
+            "expiryDatetime": expiration_datetime,
+            "info": raw_data,
+            "symbol": to_human_format(raw_data),
+        }
+    )
+    return market
+
+
 @dataclass
 class RyskClient:
     """
@@ -48,16 +112,18 @@ class RyskClient:
 
     _markets: List[Dict[str, Any]]
     _tickers: List[Dict[str, Any]]
+    _otokens: Dict[str, Dict[str, Any]]
 
     def __init__(
         self, address: Optional[str] = None, private_key: Optional[str] = None
     ):
         self.subgraph_client = SubgraphClient()
         self.web3_client = Web3Client()
-        self.verbose = True
         self._markets = []
         self._tickers = []
+        self._otokens = {}
         self._crypto = EthCrypto(address, private_key)
+        self.logger = get_logger()
 
     def fetch_markets(self) -> List[Dict[str, Any]]:
         """
@@ -65,185 +131,45 @@ class RyskClient:
         """
 
         raw_data = self.subgraph_client.query_markets()
-        data = map(self._parse_market, raw_data)
+        data = map(parse_market, raw_data)
 
-        filtered_data = filter(lambda x: x["active"], data)
-        self._markets = list(filtered_data)
+        self._markets = list(data)
         return self._markets
 
-    def _parse_market(self, raw_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Parses the raw data from the subgraph into a market
-        {'active': True,
-         'base': 'ETH',
-         'baseId': 'ETH',
-         'contract': True,
-         'contractSize': 1.0,
-         'expiry': 1685520000000,
-         'expiryDatetime': '2023-05-31T08:00:00.000Z',
-         'future': False,
-         'id': 'ETH-31MAY23-1950-P',
-         'info': {'base_currency': 'ETH',
-                  'block_trade_commission': '0.0003',
-                  'block_trade_min_trade_amount': '250',
-                  'block_trade_tick_size': '0.0001',
-                  'contract_size': '1.0',
-                  'counter_currency': 'USD',
-                  'creation_timestamp': '1685260860000',
-                  'expiration_timestamp': '1685520000000',
-                  'instrument_id': '258005',
-                  'instrument_name': 'ETH-31MAY23-1950-P',
-                  'instrument_type': 'reversed',
-                  'is_active': True,
-                  'kind': 'option',
-                  'maker_commission': '0.0003',
-                  'min_trade_amount': '1',
-                  'option_type': 'put',
-                  'price_index': 'eth_usd',
-                  'quote_currency': 'ETH',
-                  'rfq': False,
-                  'settlement_currency': 'ETH',
-                  'settlement_period': 'day',
-                  'strike': '1950.0',
-                  'taker_commission': '0.0003',
-                  'tick_size': '0.0005'},
-         'inverse': True,
-         'limits': {'amount': {'max': None, 'min': 1.0},
-                    'cost': {'max': None, 'min': None},
-                    'leverage': {'max': None, 'min': None},
-                    'price': {'max': None, 'min': 0.0005}},
-         'linear': False,
-         'maker': 0.0003,
-         'margin': False,
-         'option': True,
-         'optionType': 'put',
-         'precision': {'amount': 1.0, 'price': 0.0005},
-         'quote': 'USD',
-         'quoteId': 'USD',
-         'settle': 'ETH',
-         'settleId': 'ETH',
-         'spot': False,
-         'strike': 1950.0,
-         'swap': False,
-         'symbol': 'ETH/USD:ETH-230531-1950-P',
-         'taker': 0.0003,
-         'type': 'option'}
-        """
-        default = {
-            "base": "ETH",
-            "baseId": "ETH",
-            "contract": True,
-            "contractSize": 1.0,
-            "spot": False,
-            "swap": False,
-            "future": False,
-            "type": "option",
-            "linear": False,
-            "inverse": True,
-        }
-        active = all(
-            [
-                raw_data["isBuyable"],
-                raw_data["isSellable"],
-                int(raw_data["expiration"]) > datetime.now().timestamp(),
-            ]
-        )
-        expiration_datetime = from_timestamp(raw_data["expiration"])
-        raw_data.update(
-            {
-                "expiration_datetime": datetime.strptime(
-                    expiration_datetime, "%Y-%m-%dT%H:%M:%S.%fZ"
-                )
-            }
-        )
-
-        default.update(
-            {
-                "active": active,
-                "id": to_human_format(raw_data),
-                "strike": int(raw_data["strike"]) / PRICE_DEVISOR,
-                "optionType": "put" if raw_data["isPut"] else "call",
-                "expiry": int(raw_data["expiration"]) * 1000,
-                "expiryDatetime": expiration_datetime,
-                "info": raw_data,
-                "symbol": to_human_format(raw_data),
-                "maker": 0.0003,
-                "taker": 0.0003,
-            }
-        )
-        return default
-
-    def fetch_tickers(self) -> List[Dict[str, Any]]:
+    def fetch_tickers(self, market: Optional[str] = None) -> List[Dict[str, Any]]:
         """
         Fetchs the ticker from the beyond pricer smart contract.
-            {'ask': None,
-             'askVolume': 0.0,
-             'average': None,
-             'baseVolume': None,
-             'bid': 0.03,
-             'bidVolume': 2.0,
-             'change': None,
-             'close': None,
-             'datetime': '2023-05-28T19:48:46.855Z',
-             'high': None,
-             'info': {'ask_iv': '0.0',
-                      'best_ask_amount': '0.0',
-                      'best_ask_price': '0.0',
-                      'best_bid_amount': '2.0',
-                      'best_bid_price': '0.03',
-                      'bid_iv': '0.0',
-                      'estimated_delivery_price': '1847.72',
-                      'greeks': {'delta': '-0.90958',
-                                 'gamma': '0.00225',
-                                 'rho': '-0.12269',
-                                 'theta': '-2.34938',
-                                 'vega': '0.24977'},
-                      'index_price': '1847.72',
-                      'instrument_name': 'ETH-31MAY23-1950-P',
-                      'interest_rate': '0.0',
-                      'last_price': None,
-                      'mark_iv': '47.17',
-                      'mark_price': '0.0561',
-                      'max_price': '0.0925',
-                      'min_price': '0.0245',
-                      'open_interest': '0.0',
-                      'state': 'open',
-                      'stats': {'high': None,
-                                'low': None,
-                                'price_change': None,
-                                'volume': '0.0',
-                                'volume_usd': '0.0'},
-                      'timestamp': '1685303326855',
-                      'underlying_index': 'SYN.ETH-31MAY23',
-                      'underlying_price': '1849.1787'},
-             'last': None,
-             'low': None,
-             'open': None,
-             'percentage': None,
-             'previousClose': None,
-             'quoteVolume': 0.0,
-             'symbol': 'ETH/USD:ETH-230531-1950-P',
-             'timestamp': 1685303326855,
-             'vwap': None}
-
         """
 
         if not self._markets:
             self.fetch_markets()
 
-        tickers = map(self._fetch_ticker, self._markets)
+        tradeable = filter(lambda x: x["active"], self._markets)
 
-        self._tickers = list(tickers)
+        if market:
+            if not list(filter(lambda x: x["id"] == market, tradeable)):
+                raise ValueError(f"Market {market} not found")
+
+        workers = multiprocessing.cpu_count()
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            self._tickers = [
+                pool.submit(self.web3_client.fetch_ticker, market).result()
+                for market in tradeable
+            ]
+
         return self._tickers
 
-    def _fetch_ticker(self, market: Dict[str, Any]) -> Dict[str, Any]:
+    @property
+    def otokens(self) -> Dict[str, Dict[str, Any]]:
         """
-        interact with the web3 api to fetch the ticker data
+        Returns a dictionary of the otokens.
         """
-        ask = self.web3_client.get_options_prices(market["info"])
-        bid = self.web3_client.get_options_prices(market["info"], side="sell")
-        return {"ask": ask, "bid": bid, "info": market}
+        if not self._otokens:
+            self.fetch_tickers()
+        self._otokens = {ticker["info"]["id"]: ticker for ticker in self._tickers}
+        return self._otokens
 
-    def fetch_positions(self) -> List[Dict[str, Any]]:
+    def fetch_positions(self, expired=False) -> List[Dict[str, Any]]:
         """
         Fetchs the positions from the subgraph.
         """
@@ -252,85 +178,28 @@ class RyskClient:
             raise ValueError("No account address was provided.")
 
         longs = self.subgraph_client.query_longs(address=self._crypto.address)
-        parsed_longs = [self._parse_position(pos, PositionSide.LONG) for pos in longs]
         shorts = self.subgraph_client.query_shorts(address=self._crypto.address)
-        parsed_short = [self._parse_position(pos, PositionSide.SHORT) for pos in shorts]
 
-        return parsed_longs + parsed_short
+        parsed_short = [self._parse_position(pos, PositionSide.SHORT) for pos in shorts]
+        parsed_longs = [self._parse_position(pos, PositionSide.LONG) for pos in longs]
+
+        if expired:
+            positions = filter(
+                lambda x: x["datetime"] <= datetime.now(),
+                parsed_longs + parsed_short,
+            )
+        else:
+            positions = filter(
+                lambda x: x["datetime"] > datetime.now(),
+                parsed_longs + parsed_short,
+            )
+        return list(positions)
 
     def _parse_position(
         self, position: Dict[str, Any], side: PositionSide
     ) -> Dict[str, Any]:
         """
         Parse the position data from the subgraph into a unified format.
-        input:
-        {
-            "id": "0x588d91abf5192a0f0dc026bf05f510253bd1cf51-0x3fa148f692e516654283c9ff4cbe3b15355f48f5-s-0",
-            "netAmount": "-20000000000000000000",
-            "buyAmount": "0",
-            "sellAmount": "20000000000000000000",
-            "active": true,
-            "realizedPnl": "1744192333",
-            "oToken": {
-              "id": "0x3fa148f692e516654283c9ff4cbe3b15355f48f5",
-              "symbol": "oWETHUSDC/USDC-19MAY23-2000C",
-              "expiryTimestamp": "1684483200",
-              "strikePrice": "200000000000",
-              "isPut": false,
-              "underlyingAsset": {
-                "id": "0x3b3a1de07439eeb04492fa64a889ee25a130cdd3"
-              },
-              "createdAt": "1683555260"
-              },
-        },
-        output:
-        {
-                'info': {
-                        'vega': '-1.35589',
-                        'total_profit_loss': '-0.001586671',
-                        'theta': '1.66193',
-                        'size': '-1.0',
-                        'settlement_price': '0.013858',
-                        'realized_profit_loss': '0.0',
-                        'open_orders_margin': '0.0',
-                        'mark_price': '0.014587',
-                        'maintenance_margin': '0.089586671',
-                        'kind': 'option',
-                        'instrument_name': 'ETH-16JUN23-1950-C',
-                        'initial_margin': '0.13466616',
-                        'index_price': '1893.35',
-                        'gamma': '-0.00293',
-                        'floating_profit_loss_usd': '-3.950784',
-                        'floating_profit_loss': '-0.000728879',
-                        'direction': 'sell',
-                        'delta': '-0.34205',
-                        'average_price_usd': '23.66689',
-                        'average_price': '0.013'
-                },
-                'id': None,
-                'symbol': 'ETH/USD:ETH-230616-1950-C',
-                'timestamp': 1685704039684,
-                'datetime': '2023-06-02T11:07:19.684Z',
-                'lastUpdateTimestamp': None,
-                'initialMargin': 0.13466616,
-                'initialMarginPercentage': None,
-                'maintenanceMargin': 0.089586671,
-                'maintenanceMarginPercentage': None,
-                'entryPrice': 0.013,
-                'notional': None,
-                'leverage': None,
-                'unrealizedPnl': -0.000728879,
-                'contracts': None,
-                'contractSize': 1.0,
-                'marginRatio': None,
-                'liquidationPrice': None,
-                'markPrice': 0.014587,
-                'lastPrice': None,
-                'collateral': None,
-                'marginMode': None,
-                'side': 'short',
-                'percentage': None
-        }
         """
         position["expiration_datetime"] = datetime.fromtimestamp(
             int(position["oToken"]["expiryTimestamp"])
@@ -338,8 +207,29 @@ class RyskClient:
         position["strike"] = float(position["oToken"]["strikePrice"]) * 1e10
         position["isPut"] = position["oToken"]["isPut"]
 
+        pnl_calculator = PnlCalculator()
+
+        buys = [
+            Trade(int(order["amount"]) / 1e18, int(order["premium"]) / -1e10)
+            for order in position["optionsBoughtTransactions"]
+        ]
+        sells = [
+            Trade(-int(order["amount"]) / 1e18, int(order["premium"]) / 1e10)
+            for order in position["optionsSoldTransactions"]
+        ]
+
+        pnl_calculator.add_trades(buys + sells)
+
         symbol = to_human_format(position)
 
+        if symbol in self.otokens:
+            book_side = "ask" if side == PositionSide.LONG else "bid"
+            price = self.otokens[symbol][book_side]
+            pnl_calculator.update_price(price)
+        else:
+            print(
+                f"Could not find {symbol} in the otokens list. Maket is probably not active."
+            )
         result = {
             "id": position["id"],
             "symbol": symbol,
@@ -348,8 +238,9 @@ class RyskClient:
                 int(position["oToken"]["expiryTimestamp"])
             ),
             "initialMarginPercentage": None,
-            "realizedPnl": float(position["realizedPnl"]) / 1e10,
-            "contractSize": position["netAmount"],
+            "realizedPnl": pnl_calculator.realised_pnl,
+            "unrealizedPnl": pnl_calculator.unrealised_pnl,
+            "contractSize": pnl_calculator.position_size,
             "side": side.value,
             "info": position,
             "contracts": None,
@@ -367,3 +258,142 @@ class RyskClient:
             "percentage": None,
         }
         return result
+
+    def create_order(
+        self,
+        symbol: str,
+        amount: float,
+        side: str = "buy",
+    ) -> Dict[str, Any]:
+        """Create a market order."""
+        if side.upper() not in OrderSide.__members__:
+            raise ValueError("Invalid order side")
+
+        if side == OrderSide.BUY.value:
+            transaction = self.buy_option(symbol, amount)
+        else:
+            transaction = self.sell_option(symbol, amount)
+        return transaction
+
+    def buy_option(
+        self,
+        market: str,
+        amount: float,
+        collateral_asset: str = "weth",
+        leverage: float = 1,
+    ):
+        """
+        Create a buy option order.
+        """
+        self.logger.info(
+            f"Buying {amount} of {market} with {collateral_asset} collateral @ {leverage}x leverage."
+        )
+        return {
+            "market": market,
+        }
+
+    def sell_option(
+        self,
+        market: str,
+        amount: float,
+        collateral_asset: str = "weth",
+        leverage: float = 1,
+    ):
+        """
+        Create a sell option order.
+        """
+        self.logger.info(
+            f"Selling {amount} of {market} with {collateral_asset} collateral @ {leverage}x leverage."
+        )
+
+        rysk_option_market = [f for f in self._markets if f["symbol"] == market][0]
+
+        _amount = amount * 1e18
+
+        acceptable_premium = self.web3_client.get_options_prices(
+            market, amount=_amount, side=OrderSide.SELL.value, collateral="eth"
+        )
+
+        position_id = 7
+        vault_id = position_id
+
+        # is this the option series??
+        option_otoken = "JUN30_call_weth_collateral"
+
+        underlying = Collateral.WETH.value
+
+        strike_asset = Collateral.USDC.value
+
+        operate_tuple = [
+            {
+                "operation": 0,
+                "operationQueue": [
+                    {
+                        "actionType": ActionType.DEPOSIT_COLLATERAL.value,
+                        "owner": self._crypto.address,
+                        "secondAddress": self.web3_client.option_exchange.address,
+                        "asset": Collateral.from_symbol(collateral_asset).value,
+                        "vaultId": vault_id,
+                        "amount": _amount,
+                        "optionSeries": {
+                            "expiration": 1,
+                            "strike": 1,
+                            "isPut": True,
+                            "underlying": NULL_ADDRESS,
+                            "strikeAsset": NULL_ADDRESS,
+                            "collateral": NULL_ADDRESS,
+                        },
+                        "indexOrAcceptablePremium": 0,
+                        "data": "0x0000000000000000000000000000000000000000",
+                    },
+                    {
+                        "actionType": ActionType.MINT_SHORT_OPTION.value,
+                        "owner": self._crypto.address,
+                        "secondAddress": self.web3_client.option_exchange.address,
+                        "asset": option_otoken,
+                        "vaultId": vault_id,
+                        "amount": 100000000,
+                        "optionSeries": {
+                            "expiration": 1,
+                            "strike": 1,
+                            "isPut": True,
+                            "underlying": NULL_ADDRESS,
+                            "strikeAsset": NULL_ADDRESS,
+                            "collateral": NULL_ADDRESS,
+                        },
+                        "indexOrAcceptablePremium": 0,
+                        "data": "0x0000000000000000000000000000000000000000",
+                    },
+                ],
+            },
+            {
+                "operation": 1,
+                "operationQueue": [
+                    {
+                        "actionType": ActionType.BURN_SHORT_OPTION.value,
+                        "owner": NULL_ADDRESS,
+                        "secondAddress": self._crypto.address,
+                        "asset": NULL_ADDRESS,
+                        "vaultId": 0,
+                        "amount": _amount,
+                        "optionSeries": {
+                            "expiration": rysk_option_market["expiration"],
+                            "strike": rysk_option_market["strike"],
+                            "isPut": rysk_option_market["is_put"],
+                            "underlying": underlying,
+                            "strikeAsset": strike_asset,
+                            "collateral": Collateral.from_symbol(
+                                collateral_asset
+                            ).value,
+                        },
+                        "indexOrAcceptablePremium": int(acceptable_premium * 0.9),
+                        "data": "0x0000000000000000000000000000000000000000",
+                    }
+                ],
+            },
+        ]
+
+        func = self.web3_client.opyn_controller.functions.operate(
+            operate_tuple
+        ).buildTransaction({"from": self._crypto.address})
+        return func

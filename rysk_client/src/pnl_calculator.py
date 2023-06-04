@@ -39,6 +39,7 @@ class PnlCalculator:
         # If the position size is 0 (i.e., all trades are closed), reset the total cost
         if self.position_size == 0:
             self.total_cost = 0
+        self.current_price = trade.price
 
     def update_price(self, price):
         """Update the current price of the PnlCalculator."""
@@ -60,3 +61,8 @@ class PnlCalculator:
     def realised_pnl(self):
         """Return the realised PnL of the PnlCalculator."""
         return self.realised_pnl_total
+
+    def add_trades(self, trades):
+        """Add a list of trades to the PnlCalculator."""
+        for trade in trades:
+            self.add_trade(trade)

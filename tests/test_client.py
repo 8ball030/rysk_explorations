@@ -32,3 +32,10 @@ def test_fetch_positions(client):
     """Test fetching positions."""
     positions = client.fetch_positions()
     assert len(positions) > 0
+
+
+def test_create_buy_order(client):
+    """Test creating a buy order."""
+    market = client.fetch_markets()[0]
+    order = client.create_order(market["symbol"], 1, "buy")
+    assert order
