@@ -270,10 +270,10 @@ class RyskClient:
             raise ValueError("Invalid order side")
 
         if side == OrderSide.BUY.value:
-            tx = self.buy_option(symbol, amount)
+            transaction = self.buy_option(symbol, amount)
         else:
-            tx = self.sell_option(symbol, amount)
-        return tx
+            transaction = self.sell_option(symbol, amount)
+        return transaction
 
     def buy_option(
         self,
