@@ -10,7 +10,18 @@ import requests
 from rysk_client.src.constants import DEFAULT_TIMEOUT, SUBGRAPH_URL
 
 MARKET_SUBGRAPH_QUERY = """
-{series 
+{series (
+  where: {
+    or:[
+    {
+            isBuyable: true
+        },
+        {
+            isSellable: true
+        }
+    ]
+  }
+)
   {   
     id 
     expiration 

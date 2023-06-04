@@ -1,6 +1,8 @@
 """
 This file contains all the constants used in the rysk_client package.
 """
+import os
+
 DEFAULT_TIMEOUT = 10
 DEFAULT_ENCODING = "utf-8"
 SUBGRAPH_URL = "https://api.goldsky.com/api/public/project_clhf7zaco0n9j490ce421agn4/subgraphs/devey/0.0.2/gn"
@@ -88,4 +90,4 @@ ADDRESSES = {
     },
 }
 
-RPC_URL = "https://arbitrum-goerli.rpc.thirdweb.com"
+RPC_URL = os.environ.get("RPC_URL", "https://arbitrum-goerli.rpc.thirdweb.com")

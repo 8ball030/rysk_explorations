@@ -2,14 +2,19 @@
 Simple client for the rysk contracts implemented in python.
 """
 import multiprocessing
+from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
+from rysk_client.src.action_types import ActionType
+from rysk_client.src.collateral import Collateral
+from rysk_client.src.constants import NULL_ADDRESS
 from rysk_client.src.pnl_calculator import PnlCalculator, Trade
-from rysk_client.src.position import PositionSide
+from rysk_client.src.position import OrderSide, PositionSide
 from rysk_client.src.subgraph import SubgraphClient
+from rysk_client.src.utils import get_logger
 from rysk_client.web3_client import Web3Client
 
 PRICE_DEVISOR = 1_000_000_000_000_000_000
@@ -59,6 +64,46 @@ DEFAULT_MARKET = {
 }
 
 
+def parse_market(raw_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Parses the raw data from the subgraph into a market
+    """
+    active = all(
+        [
+            any(
+                [
+                    raw_data["isBuyable"],
+                    raw_data["isSellable"],
+                ]
+            ),
+            # we can get also filter out the expired options int(raw_data["expiration"]) > datetime.now().timestamp(),
+        ]
+    )
+    expiration_datetime = from_timestamp(raw_data["expiration"])
+    raw_data.update(
+        {
+            "expiration_datetime": datetime.strptime(
+                expiration_datetime, "%Y-%m-%dT%H:%M:%S.%fZ"
+            )
+        }
+    )
+    market = deepcopy(DEFAULT_MARKET)
+
+    market.update(
+        {
+            "active": active,
+            "id": to_human_format(raw_data),
+            "strike": int(raw_data["strike"]) / PRICE_DEVISOR,
+            "optionType": "put" if raw_data["isPut"] else "call",
+            "expiry": int(raw_data["expiration"]) * 1000,
+            "expiryDatetime": expiration_datetime,
+            "info": raw_data,
+            "symbol": to_human_format(raw_data),
+        }
+    )
+    return market
+
+
 @dataclass
 class RyskClient:
     """
@@ -74,11 +119,11 @@ class RyskClient:
     ):
         self.subgraph_client = SubgraphClient()
         self.web3_client = Web3Client()
-        self.verbose = True
         self._markets = []
         self._tickers = []
         self._otokens = {}
         self._crypto = EthCrypto(address, private_key)
+        self.logger = get_logger()
 
     def fetch_markets(self) -> List[Dict[str, Any]]:
         """
@@ -86,48 +131,12 @@ class RyskClient:
         """
 
         raw_data = self.subgraph_client.query_markets()
-        data = map(self._parse_market, raw_data)
+        data = map(parse_market, raw_data)
 
-        filtered_data = filter(lambda x: x["active"], data)
-        self._markets = list(filtered_data)
+        self._markets = list(data)
         return self._markets
 
-    def _parse_market(self, raw_data: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Parses the raw data from the subgraph into a market
-        """
-        active = all(
-            [
-                raw_data["isBuyable"],
-                raw_data["isSellable"],
-                int(raw_data["expiration"]) > datetime.now().timestamp(),
-            ]
-        )
-        expiration_datetime = from_timestamp(raw_data["expiration"])
-        raw_data.update(
-            {
-                "expiration_datetime": datetime.strptime(
-                    expiration_datetime, "%Y-%m-%dT%H:%M:%S.%fZ"
-                )
-            }
-        )
-        market = deepcopy(DEFAULT_MARKET)
-
-        market.update(
-            {
-                "active": active,
-                "id": to_human_format(raw_data),
-                "strike": int(raw_data["strike"]) / PRICE_DEVISOR,
-                "optionType": "put" if raw_data["isPut"] else "call",
-                "expiry": int(raw_data["expiration"]) * 1000,
-                "expiryDatetime": expiration_datetime,
-                "info": raw_data,
-                "symbol": to_human_format(raw_data),
-            }
-        )
-        return market
-
-    def fetch_tickers(self) -> List[Dict[str, Any]]:
+    def fetch_tickers(self, market: Optional[str] = None) -> List[Dict[str, Any]]:
         """
         Fetchs the ticker from the beyond pricer smart contract.
         """
@@ -135,10 +144,18 @@ class RyskClient:
         if not self._markets:
             self.fetch_markets()
 
-        cores = multiprocessing.cpu_count()
+        tradeable = filter(lambda x: x["active"], self._markets)
 
-        with multiprocessing.Pool(cores) as pool:
-            self._tickers = list(pool.map(self._fetch_ticker, self._markets))  # type: ignore
+        if market:
+            if not list(filter(lambda x: x["id"] == market, tradeable)):
+                raise ValueError(f"Market {market} not found")
+
+        workers = multiprocessing.cpu_count()
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            self._tickers = [
+                pool.submit(self.web3_client.fetch_ticker, market).result()
+                for market in tradeable
+            ]
 
         return self._tickers
 
@@ -152,15 +169,7 @@ class RyskClient:
         self._otokens = {ticker["info"]["id"]: ticker for ticker in self._tickers}
         return self._otokens
 
-    def _fetch_ticker(self, market: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        interact with the web3 api to fetch the ticker data
-        """
-        ask = self.web3_client.get_options_prices(market["info"])
-        bid = self.web3_client.get_options_prices(market["info"], side="sell")
-        return {"ask": ask, "bid": bid, "info": market}
-
-    def fetch_positions(self) -> List[Dict[str, Any]]:
+    def fetch_positions(self, expired=False) -> List[Dict[str, Any]]:
         """
         Fetchs the positions from the subgraph.
         """
@@ -169,11 +178,22 @@ class RyskClient:
             raise ValueError("No account address was provided.")
 
         longs = self.subgraph_client.query_longs(address=self._crypto.address)
-        parsed_longs = [self._parse_position(pos, PositionSide.LONG) for pos in longs]
         shorts = self.subgraph_client.query_shorts(address=self._crypto.address)
-        parsed_short = [self._parse_position(pos, PositionSide.SHORT) for pos in shorts]
 
-        return parsed_longs + parsed_short
+        parsed_short = [self._parse_position(pos, PositionSide.SHORT) for pos in shorts]
+        parsed_longs = [self._parse_position(pos, PositionSide.LONG) for pos in longs]
+
+        if expired:
+            positions = filter(
+                lambda x: x["datetime"] <= datetime.now(),
+                parsed_longs + parsed_short,
+            )
+        else:
+            positions = filter(
+                lambda x: x["datetime"] > datetime.now(),
+                parsed_longs + parsed_short,
+            )
+        return list(positions)
 
     def _parse_position(
         self, position: Dict[str, Any], side: PositionSide
@@ -238,3 +258,142 @@ class RyskClient:
             "percentage": None,
         }
         return result
+
+    def create_order(
+        self,
+        symbol: str,
+        amount: float,
+        side: str = "buy",
+    ) -> Dict[str, Any]:
+        """Create a market order."""
+        if side.upper() not in OrderSide.__members__:
+            raise ValueError("Invalid order side")
+
+        if side == OrderSide.BUY.value:
+            tx = self.buy_option(symbol, amount)
+        else:
+            tx = self.sell_option(symbol, amount)
+        return tx
+
+    def buy_option(
+        self,
+        market: str,
+        amount: float,
+        collateral_asset: str = "weth",
+        leverage: float = 1,
+    ):
+        """
+        Create a buy option order.
+        """
+        self.logger.info(
+            f"Buying {amount} of {market} with {collateral_asset} collateral @ {leverage}x leverage."
+        )
+        return {
+            "market": market,
+        }
+
+    def sell_option(
+        self,
+        market: str,
+        amount: float,
+        collateral_asset: str = "weth",
+        leverage: float = 1,
+    ):
+        """
+        Create a sell option order.
+        """
+        self.logger.info(
+            f"Selling {amount} of {market} with {collateral_asset} collateral @ {leverage}x leverage."
+        )
+
+        rysk_option_market = [f for f in self._markets if f["symbol"] == market][0]
+
+        _amount = amount * 1e18
+
+        acceptable_premium = self.web3_client.get_options_prices(
+            market, amount=_amount, side=OrderSide.SELL.value, collateral="eth"
+        )
+
+        position_id = 7
+        vault_id = position_id
+
+        # is this the option series??
+        option_otoken = "JUN30_call_weth_collateral"
+
+        underlying = Collateral.WETH.value
+
+        strike_asset = Collateral.USDC.value
+
+        operate_tuple = [
+            {
+                "operation": 0,
+                "operationQueue": [
+                    {
+                        "actionType": ActionType.DEPOSIT_COLLATERAL.value,
+                        "owner": self._crypto.address,
+                        "secondAddress": self.web3_client.option_exchange.address,
+                        "asset": Collateral.from_symbol(collateral_asset).value,
+                        "vaultId": vault_id,
+                        "amount": _amount,
+                        "optionSeries": {
+                            "expiration": 1,
+                            "strike": 1,
+                            "isPut": True,
+                            "underlying": NULL_ADDRESS,
+                            "strikeAsset": NULL_ADDRESS,
+                            "collateral": NULL_ADDRESS,
+                        },
+                        "indexOrAcceptablePremium": 0,
+                        "data": "0x0000000000000000000000000000000000000000",
+                    },
+                    {
+                        "actionType": ActionType.MINT_SHORT_OPTION.value,
+                        "owner": self._crypto.address,
+                        "secondAddress": self.web3_client.option_exchange.address,
+                        "asset": option_otoken,
+                        "vaultId": vault_id,
+                        "amount": 100000000,
+                        "optionSeries": {
+                            "expiration": 1,
+                            "strike": 1,
+                            "isPut": True,
+                            "underlying": NULL_ADDRESS,
+                            "strikeAsset": NULL_ADDRESS,
+                            "collateral": NULL_ADDRESS,
+                        },
+                        "indexOrAcceptablePremium": 0,
+                        "data": "0x0000000000000000000000000000000000000000",
+                    },
+                ],
+            },
+            {
+                "operation": 1,
+                "operationQueue": [
+                    {
+                        "actionType": ActionType.BURN_SHORT_OPTION.value,
+                        "owner": NULL_ADDRESS,
+                        "secondAddress": self._crypto.address,
+                        "asset": NULL_ADDRESS,
+                        "vaultId": 0,
+                        "amount": _amount,
+                        "optionSeries": {
+                            "expiration": rysk_option_market["expiration"],
+                            "strike": rysk_option_market["strike"],
+                            "isPut": rysk_option_market["is_put"],
+                            "underlying": underlying,
+                            "strikeAsset": strike_asset,
+                            "collateral": Collateral.from_symbol(
+                                collateral_asset
+                            ).value,
+                        },
+                        "indexOrAcceptablePremium": int(acceptable_premium * 0.9),
+                        "data": "0x0000000000000000000000000000000000000000",
+                    }
+                ],
+            },
+        ]
+
+        func = self.web3_client.opyn_controller.functions.operate(
+            operate_tuple
+        ).buildTransaction({"from": self._crypto.address})
+        return func
