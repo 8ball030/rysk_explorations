@@ -7,12 +7,23 @@ import os
 import rich_click as click
 
 from rysk_client.client import RyskClient
-from rysk_client.src.utils import render_table
+from rysk_client.src.utils import get_logger, render_table
+
+global logger  # pylint: disable=W0604
+logger = get_logger()
 
 
 @click.group("Rysk client")
-def cli():
+@click.option(
+    "--log-level",
+    "-l",
+    default="INFO",
+    type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]),
+    help="Logging level.",
+)
+def cli(log_level):
     """Rysk client command line interface."""
+    logger.setLevel(log_level)
 
 
 @cli.group("markets")
@@ -78,6 +89,7 @@ def fetch_positions():
     auth = {
         "address": os.environ["ETH_ADDRESS"],
         "private_key": os.environ["ETH_PRIVATE_KEY"],
+        "logger": logger,
     }
 
     client = RyskClient(**auth)
@@ -86,5 +98,12 @@ def fetch_positions():
     render_table("Positions", positions, columns)
 
 
+@trades.command("watch")
+def watch():
+    """Allows the user to watch trades as they occur on the contract."""
+    client = RyskClient(logger=logger)
+    client.watch_trades()
+
+
 if __name__ == "__main__":
-    cli()
+    cli()  # pylint: disable=no-value-for-parameter

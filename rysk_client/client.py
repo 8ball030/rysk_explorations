@@ -115,15 +115,18 @@ class RyskClient:
     _otokens: Dict[str, Dict[str, Any]]
 
     def __init__(
-        self, address: Optional[str] = None, private_key: Optional[str] = None
+        self,
+        address: Optional[str] = None,
+        private_key: Optional[str] = None,
+        logger=None,
     ):
-        self.subgraph_client = SubgraphClient()
-        self.web3_client = Web3Client()
         self._markets = []
         self._tickers = []
         self._otokens = {}
         self._crypto = EthCrypto(address, private_key)
-        self.logger = get_logger()
+        self._logger = logger or get_logger()
+        self.web3_client = Web3Client(self._logger)
+        self.subgraph_client = SubgraphClient()
 
     def fetch_markets(self) -> List[Dict[str, Any]]:
         """
@@ -285,7 +288,7 @@ class RyskClient:
         """
         Create a buy option order.
         """
-        self.logger.info(
+        self._logger.info(
             f"Buying {amount} of {market} with {collateral_asset} collateral @ {leverage}x leverage."
         )
         return {
@@ -302,7 +305,7 @@ class RyskClient:
         """
         Create a sell option order.
         """
-        self.logger.info(
+        self._logger.info(
             f"Selling {amount} of {market} with {collateral_asset} collateral @ {leverage}x leverage."
         )
 
@@ -397,3 +400,8 @@ class RyskClient:
             operate_tuple
         ).buildTransaction({"from": self._crypto.address})
         return func
+
+    def watch_trades(self):
+        """Watch trades."""
+        self._logger.info("Watching trades...")
+        self.web3_client.watch_trades()

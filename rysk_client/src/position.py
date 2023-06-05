@@ -16,6 +16,7 @@ class OrderSide(Enum):
     SELL = "sell"
 
 
+@dataclass
 class Order:
     """Class to represent an order"""
 
@@ -24,6 +25,12 @@ class Order:
     order_id: str
     order_side: OrderSide
     order_type: str = "market"
+
+    def __str__(self) -> str:
+        return f"Order({self.order_side}, {self.amount}, {self.price})"
+
+    def __repr__(self) -> str:
+        return self.__str__()
 
 
 class PositionSide(Enum):
