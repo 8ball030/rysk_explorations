@@ -103,7 +103,7 @@ class RyskClient:  # noqa: R0902
 
     def to_checksum_address(self, address):
         """Convert an address to a checksum address."""
-        return self.web3_client.web3.toChecksumAddress(address)
+        return self.web3_client.web3.to_checksum_address(address)
 
     def fetch_tickers(self, market: Optional[str] = None) -> List[Dict[str, Any]]:
         """

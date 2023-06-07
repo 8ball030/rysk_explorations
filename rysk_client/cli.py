@@ -123,7 +123,7 @@ def watch():
 def close():
     """Close a position."""
     client = RyskClient(logger=logger)
-    assert client.web3_client.web3.isConnected()
+    assert client.web3_client.web3.is_connected()
     raise NotImplementedError
 
 
@@ -131,7 +131,7 @@ def close():
 def settle():
     """Settle a position."""
     client = RyskClient(logger=logger)
-    assert client.web3_client.web3.isConnected()
+    assert client.web3_client.web3.is_connected()
     raise NotImplementedError
 
 
@@ -139,7 +139,7 @@ def settle():
 def redeem():
     """Redeem a position."""
     client = RyskClient(logger=logger)
-    assert client.web3_client.web3.isConnected()
+    assert client.web3_client.web3.is_connected()
     raise NotImplementedError
 
 
@@ -147,7 +147,7 @@ def redeem():
 def collateralize():
     """Collateralize a position."""
     client = RyskClient(logger=logger)
-    assert client.web3_client.web3.isConnected()
+    assert client.web3_client.web3.is_connected()
     raise NotImplementedError
 
 
@@ -155,7 +155,7 @@ def collateralize():
 def list_trades():
     """List trades."""
     client = RyskClient(logger=logger)
-    assert client.web3_client.web3.isConnected()
+    assert client.web3_client.web3.is_connected()
     raise NotImplementedError  # disable=raising-to-general-error
 
 
