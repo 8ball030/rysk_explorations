@@ -9,8 +9,8 @@ from web3 import Web3
 class Collateral(Enum):
     """Collateral supported by the protocol"""
 
-    WETH = Web3.toChecksumAddress("0x3b3a1de07439eeb04492fa64a889ee25a130cdd3")
-    USDC = Web3.toChecksumAddress("0x408c5755b5c7a0a28d851558ea3636cfc5b5b19d")
+    WETH = Web3.to_checksum_address("0x3b3a1de07439eeb04492fa64a889ee25a130cdd3")
+    USDC = Web3.to_checksum_address("0x408c5755b5c7a0a28d851558ea3636cfc5b5b19d")
 
     @classmethod
     def is_supported(cls, collateral):

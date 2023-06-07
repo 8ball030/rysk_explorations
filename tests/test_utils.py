@@ -22,7 +22,7 @@ def test_get_contract(web3):
 
 def test_get_web3(web3):
     """Test whether we can get a web3 instance."""
-    assert web3.isConnected()
+    assert web3.is_connected()
 
 
 @pytest.mark.parametrize("address", ADDRESSES.keys())
