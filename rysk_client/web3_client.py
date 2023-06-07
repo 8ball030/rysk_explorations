@@ -5,13 +5,14 @@ import json
 import logging
 from collections import deque
 from enum import Enum
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import websocket
 from web3.contract import Contract
 
 from rysk_client.src.collateral import Collateral
 from rysk_client.src.constants import WSS_URL
+from rysk_client.src.crypto import EthCrypto
 from rysk_client.src.position import Order, OrderSide
 from rysk_client.src.utils import get_contract, get_logger, get_web3
 
@@ -22,14 +23,27 @@ class Balances(Enum):
     """
 
 
-class Web3Client:
+class Web3Client:  # pylint: disable=too-many-instance-attributes
     """Client for the RyskFinance protocol."""
 
     beyond_pricer: Contract
     opyn_controller: Contract
     option_exchange: Contract
+    option_registry: Contract
 
-    def __init__(self, logger: Optional[logging.Logger] = None):
+    # lenses
+    dhv_lens_mk1: Contract
+    user_position_lens_mk1: Contract
+
+    # collateral
+    usdc: Contract
+    weth: Contract
+
+    def __init__(
+        self,
+        logger: Optional[logging.Logger] = None,
+        crypto: Optional[EthCrypto] = None,
+    ):
         """
         Initialize the client with the web3 provider.
         """
@@ -37,12 +51,25 @@ class Web3Client:
         self.beyond_pricer = get_contract("beyond_pricer", self.web3)
         self.opyn_controller = get_contract("opyn_controller", self.web3)
         self.option_exchange = get_contract("option_exchange", self.web3)
+        self.option_registry = get_contract("option_registry", self.web3)
+
+        self.user_position_lens_mk1 = get_contract("user_position_lens_mk1", self.web3)
+        self.dhv_lens_mk1 = get_contract("dhv_lens_mk1", self.web3)
+
+        self.usdc = get_contract("usdc", self.web3)
+        self.weth = get_contract("weth", self.web3)
+        # is this an artifact of the testnet?
+        self.settlement_usdc = get_contract("settlement_usdc", self.web3)
+        self.settlement_weth = get_contract("settlement_weth", self.web3)
+
         self._logger = logger or get_logger()
         self._processed_tx: deque = deque(maxlen=100)
+        self._crypto = crypto
 
     def get_options_prices(
         self,
         option_data,
+        dhv_exposure,
         amount=1000000000000000000,
         side="buy",
         collateral="weth",
@@ -73,7 +100,7 @@ class Web3Client:
                 option_series,
                 int(amount),
                 side == "sell",
-                int(option_data["netDHVExposure"]),
+                int(dhv_exposure),
             ).call()
         except Exception as error:  # pylint: disable=broad-except
             self._logger.error(
@@ -87,20 +114,12 @@ class Web3Client:
         """
         Get the balances for an address
         """
-        raise NotImplementedError
-
-    def fetch_ticker(self, market: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        interact with the web3 api to fetch the ticker data
-        """
-        ask = self.get_options_prices(market["info"])
-        bid = self.get_options_prices(market["info"], side="sell")
+        safe_address = self.web3.to_checksum_address(self._crypto.address)
         return {
-            "ask": ask,
-            "bid": bid,
-            "info": market,
-            "symbol": market["symbol"],
-            "expiration": market["info"]["expiration"],
+            "weth": self.settlement_weth.functions.balanceOf(safe_address).call()
+            / 1e18,
+            "usdc": self.settlement_usdc.functions.balanceOf(safe_address).call() / 1e6,
+            "eth": self.web3.eth.getBalance(self._crypto.address) / 1e18,
         }
 
     def watch_trades(self):
@@ -116,7 +135,7 @@ class Web3Client:
         )
         ws_connection.run_forever()
 
-    def on_message(self, websocket, message): # pylint: disable=unused-argument
+    def on_message(self, websocket, message):  # pylint: disable=unused-argument
         """On new message, process the message."""
         data = json.loads(message)
         if set(data.keys()) == {"id", "result", "jsonrpc"}:
@@ -183,3 +202,77 @@ class Web3Client:
                 f"An exception occurred while trying to get the transaction arguments for {tx_receipt}: {exc}"
             )
             return {}, True
+
+    def sign_and_sumbit(self, txn: dict, private_key: str) -> str:  # type: ignore
+        """
+        Sign the transaction with the private key and send it to the blockchain.
+        """
+
+        signed_txn = self.web3.eth.account.sign_transaction(
+            txn, private_key=private_key
+        )
+        tx_hash = self.web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+        self._logger.debug(f"Transaction hash: {tx_hash.hex()}")
+        receipt = self.web3.eth.wait_for_transaction_receipt(tx_hash, 180)
+        # we need to check the receipt to see if the transaction was successful
+        if receipt["status"] == 0:
+            self._logger.error(f"Transaction failed: {receipt}")
+            return False  # type: ignore
+        self._logger.debug(f"Transaction successful: {receipt}")
+        return tx_hash.hex()
+
+    def is_approved(
+        self, contract: Contract, spender: str, owner: str, amount: int
+    ) -> bool:
+        """
+        Check if the spender is approved to spend the owner's tokens.
+        """
+        return contract.functions.allowance(owner, spender).call() >= amount
+
+    def create_approval(
+        self, contract: Contract, spender: str, owner: str, amount: int
+    ) -> dict:
+        """
+        Create an approval transaction.
+        """
+        transaction = contract.functions.approve(spender, int(amount)).buildTransaction(
+            {
+                "from": owner,
+                "nonce": self.web3.eth.get_transaction_count(owner),
+            }
+        )
+        return transaction
+
+    def fetch_user_vaults(self, address: str) -> List[Dict[str, Any]]:  # noqa: W0613
+        """
+        Fetch the user's positions from the options exchange.
+        """
+        return self.user_position_lens_mk1.functions.getVaultsForUser(
+            str(self._crypto.address)  # type: ignore
+        ).call()
+
+    def get_option_chain(self):
+        """
+        Call the dhv_lens contract to retrieve the options chain.
+        """
+        return self.dhv_lens_mk1.functions.getOptionChain().call()
+
+    def get_otoken(self, series: Dict[str, Any]):
+        """
+        Call the option registry to retrieve the otoken.
+        underlying: address, underlying asset address is weth lower
+        strikeAsset: address,
+        expiration: unit256,
+        isPut: bool (true if put, false if call)
+        strike: unit256 (1e18)
+        collateral: address Collateral asset address
+        """
+        arguments = (
+            Collateral.WETH.value,
+            Collateral.USDC.value,
+            series["expiration"],
+            series["isPut"],
+            series["strike"],
+            Collateral.USDC.value if series["isPut"] else Collateral.WETH.value,
+        )
+        return self.option_registry.functions.getOtoken(*arguments).call()

@@ -604,14 +604,14 @@ bump2version = "*"
 
 [[package]]
 name = "ccxt"
-version = "3.1.21"
+version = "3.1.30"
 description = "A JavaScript / TypeScript / Python / C# / PHP cryptocurrency trading library with support for 130+ exchanges"
 category = "main"
 optional = false
 python-versions = "*"
 files = [
-    {file = "ccxt-3.1.21-py2.py3-none-any.whl", hash = "sha256:8bb9f944bd2a2ed04df14903cdfbfd8932bdcc94b89f41b54b0092163c4aebd9"},
-    {file = "ccxt-3.1.21.tar.gz", hash = "sha256:254e784e352c8b038a8dd50a217b995553fe90147251fdb06a0095e11f1e1e5d"},
+    {file = "ccxt-3.1.30-py2.py3-none-any.whl", hash = "sha256:f80d92eca1dd55fdc00bf92beabb9c3c9b554b0fe12cda2bce585fad60b7c6da"},
+    {file = "ccxt-3.1.30.tar.gz", hash = "sha256:b051996feb650b68735cc4a6f1e3b6b8e49ba1d98a9731f4ad961ad7f4e1682f"},
 ]
 
 [package.dependencies]
@@ -4041,14 +4041,14 @@ dev = ["flake8 (<4.0.0)", "flake8-annotations", "flake8-bugbear", "flake8-commas
 
 [[package]]
 name = "urllib3"
-version = "2.0.2"
+version = "2.0.3"
 description = "HTTP library with thread-safe connection pooling, file post, and more."
 category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "urllib3-2.0.2-py3-none-any.whl", hash = "sha256:d055c2f9d38dc53c808f6fdc8eab7360b6fdbbde02340ed25cfbcd817c62469e"},
-    {file = "urllib3-2.0.2.tar.gz", hash = "sha256:61717a1095d7e155cdb737ac7bb2f4324a858a1e2e6466f6d03ff630ca68d3cc"},
+    {file = "urllib3-2.0.3-py3-none-any.whl", hash = "sha256:48e7fafa40319d358848e1bc6809b208340fafe2096f1725d05d67443d0483d1"},
+    {file = "urllib3-2.0.3.tar.gz", hash = "sha256:bee28b5e56addb8226c96f7f13ac28cb4c301dd5ea8a6ca179c0b9835e032825"},
 ]
 
 [package.extras]
@@ -4468,5 +4468,5 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 
 [metadata]
 lock-version = "2.0"
-python-versions = ">=3.8,<4"
-content-hash = "c27691bdd984068e349c7e8064eea3bd34f1de9eed528bb7b8b0d1e136b3df5b"
+python-versions = ">=3.8,<4.0"
+content-hash = "9bcf5caa0166317dd87fc839b1c590ef7aa5e48a94059d384289e2a354f8a932"
