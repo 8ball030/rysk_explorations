@@ -571,7 +571,7 @@ class RyskClient:  # noqa: R0902
 
         operate_txn = self.web3_client.option_exchange.functions.operate(
             operate_tuple
-        ).buildTransaction({"from": self._crypto.address})
+        ).build_transaction({"from": self._crypto.address})
         return operate_txn
 
     def watch_trades(self):
