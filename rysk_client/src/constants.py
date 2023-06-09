@@ -7,6 +7,7 @@ DEFAULT_TIMEOUT = 10
 DEFAULT_ENCODING = "utf-8"
 SUBGRAPH_URL = "https://api.goldsky.com/api/public/project_clhf7zaco0n9j490ce421agn4/subgraphs/devey/0.0.2/gn"
 NULL_ADDRESS = "0x0000000000000000000000000000000000000000"
+NULL_DATA = "0x0000000000000000000000000000000000000000"
 SUPPORTED_LEVERAGES = [1, 1.5, 2, 3]
 
 raw_data = {
@@ -32,7 +33,7 @@ raw_data = {
         "uniswapV3HedgingReactor": "0x933589C46233Efa8cCDe8287E077cA6CC51Bec17",
         "perpHedgingReactor": "0xDd418b4Ec8396191D08957bD42F549e215B8e89a",
         "USDC": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
-        "WETH": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "WETH": "0x82aF49447D8a07e3bd95BD0d56f35241523fB0xb672fe86693bf6f3b034730f5d2c77c8844d6b45ab1",
     },
     "arbitrumGoerli": {
         "OpynController": "0x11a602a5F5D823c103bb8b7184e22391Aae5F4C2",
@@ -74,7 +75,7 @@ ADDRESSES = {
     },
     "option_registry": {
         "path": "contracts/OptionRegistry.sol/OptionRegistry.json",
-        "address": "0x48A74b742bd97545ace8B0876F5BA7ED19DF6579",
+        "address": "0x4E89cc3215AF050Ceb63Ca62470eeC7C1A66F737",
     },
     "option_catalogue": {
         "path": "contracts/OptionCatalogue.sol/OptionCatalogue.json",
@@ -87,6 +88,22 @@ ADDRESSES = {
     "weth": {
         "path": "contracts/interfaces/I_ERC20.sol/I_ERC20.json",
         "address": "0x53320bE2A35649E9B2a0f244f9E9474929d3B699",
+    },
+    "dhv_lens_mk1": {
+        "path": "contracts/lens/DHVLensMK1.sol/DHVLensMK1.json",
+        "address": "0xe1805262E848945C8E545D1F82809Ba5bc5Ad7c0",
+    },
+    "user_position_lens_mk1": {
+        "path": "contracts/lens/UserPositionLensMK1.sol/UserPositionLensMK1.json",
+        "address": "0xa6e2ebD13Cbb085659fB8Ce87fAFdF052066017f",
+    },
+    "settlement_usdc": {
+        "path": "contracts/interfaces/I_ERC20.sol/I_ERC20.json",
+        "address": "0x408c5755b5c7a0a28D851558eA3636CfC5b5b19d",
+    },
+    "settlement_weth": {
+        "path": "contracts/interfaces/I_ERC20.sol/I_ERC20.json",
+        "address": "0x3b3a1dE07439eeb04492Fa64A889eE25A130CDd3",
     },
 }
 

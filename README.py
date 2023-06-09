@@ -5,16 +5,22 @@
 # 
 # ## Installation
 # 
-# ### Dev
+# The application is availale on pypi and can be installed as so;
 # 
-# dependencies are managed with poetry. 
+#     ```bash
+#     pip install rysk-client
+#     ```
+# 
+# ### Dev & Contributing
+# 
+# Dependencies are managed with poetry.
 # 
 # For dev build.
 
 # In[1]:
 
 
-get_ipython().system('pip install rysk-client')
+get_ipython().system('pip install -U .')
 
 
 # # Usage
@@ -26,7 +32,7 @@ get_ipython().system('pip install rysk-client')
 from rysk_client.src.utils import get_web3
 
 web3 = get_web3()
-web3.isConnected()
+web3.is_connected()
 
 
 # ## Creating a Client 
@@ -42,6 +48,8 @@ from tests.conftest import DEFAULT_ADDRESS
 auth = {
     "address": DEFAULT_ADDRESS,
 }
+
+print(auth)
 
 client = RyskClient(**auth)
 client

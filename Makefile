@@ -40,7 +40,8 @@ clean-test:
 	find . -name 'log.*.txt' -exec rm -fr {} +
 
 fmt:
-	poetry run isort tests rysk_client && poetry run black tests rysk_client
+	poetry run black tests rysk_client && poetry run isort tests rysk_client 
+
 lint:
 	poetry run adev lint -v -p tests
 	poetry run adev lint -v -p rysk_client

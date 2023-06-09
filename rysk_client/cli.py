@@ -46,6 +46,11 @@ def trades():
     """Interact with trades."""
 
 
+@cli.group("balances")
+def balances():
+    """Interact with balances."""
+
+
 @markets.command("fetch")
 @click.option("--sort", "-s", default="expiration", help="Sort by column.")
 @click.option("--is_active", "-a", default=True, help="Filter by active.")
@@ -56,13 +61,13 @@ def fetch_markets(sort, is_active):
     if is_active:
         markets = [market for market in markets if market["active"]]
 
-    def parse_dhv(market):
-        """Get the dhv from the info."""
-        market["dhv"] = int(int(market["info"]["netDHVExposure"]) / 1e18)
-
-    for market in markets:
-        parse_dhv(market)
-    columns = ["symbol", "expiry", "strike", "dhv"]
+    columns = [
+        "id",
+        "expiration",
+        "strike",
+        "bid",
+        "ask",
+    ]
     sorted_markets = sorted(markets, key=lambda x: int(x[sort]))
     render_table("Markets", sorted_markets, columns)
 
@@ -75,13 +80,13 @@ def fetch_tickers(sort, market):
     client = RyskClient()
     tickers = client.fetch_tickers(market)
     sorted_tickers = sorted(tickers, key=lambda x: int(x[sort]))
-    columns = ["symbol", "expiration", "bid", "ask"]
+    columns = ["id", "expiration", "bid", "ask"]
     render_table("Tickers", sorted_tickers, columns)
 
 
-@positions.command("fetch")
-def fetch_positions():
-    """Fetch positions."""
+@positions.command("list")
+def list_positions():
+    """List positions."""
     if "ETH_ADDRESS" not in os.environ:
         raise ValueError("ETH_ADDRESS environment variable not set.")
     if "ETH_PRIVATE_KEY" not in os.environ:
@@ -91,18 +96,116 @@ def fetch_positions():
         "private_key": os.environ["ETH_PRIVATE_KEY"],
         "logger": logger,
     }
+    logger.info(f"Fetching positions for {auth['address']}")
 
     client = RyskClient(**auth)
     positions = client.fetch_positions()
-    columns = ["symbol", "size", "price", "expiration"]
+    columns = [
+        "symbol",
+        "side",
+        "entryPrice",
+        "id",
+        "size",
+        "unrealizedPnl",
+        "realizedPnl",
+    ]
     render_table("Positions", positions, columns)
 
 
 @trades.command("watch")
 def watch():
-    """Allows the user to watch trades as they occur on the contract."""
+    """Watch trades as they occur on the contract."""
     client = RyskClient(logger=logger)
     client.watch_trades()
+
+
+@positions.command("close")
+def close():
+    """Close a position."""
+    client = RyskClient(logger=logger)
+    assert client.web3_client.web3.is_connected()
+    raise NotImplementedError
+
+
+@positions.command("settle")
+def settle():
+    """Settle a position."""
+    client = RyskClient(logger=logger)
+    assert client.web3_client.web3.is_connected()
+    raise NotImplementedError
+
+
+@positions.command("redeem")
+def redeem():
+    """Redeem a position."""
+    client = RyskClient(logger=logger)
+    assert client.web3_client.web3.is_connected()
+    raise NotImplementedError
+
+
+@positions.command("collateralize")
+def collateralize():
+    """Collateralize a position."""
+    client = RyskClient(logger=logger)
+    assert client.web3_client.web3.is_connected()
+    raise NotImplementedError
+
+
+@trades.command("list")
+def list_trades():
+    """List trades."""
+    client = RyskClient(logger=logger)
+    assert client.web3_client.web3.is_connected()
+    raise NotImplementedError  # disable=raising-to-general-error
+
+
+@trades.command("create")
+@click.option("--market", "-m", required=True, help="Market to trade.")
+@click.option("--side", "-s", required=True, help="Buy or sell.")
+@click.option(
+    "--amount", "-a", required=True, type=click.FLOAT, help="Size of the trade."
+)
+@click.option("--retries", "-r", default=3, type=click.INT, help="Number of retries.")
+def create_trade(market, side, amount, retries):
+    """Create a trade."""
+    auth = {
+        "address": os.environ["ETH_ADDRESS"],
+        "private_key": os.environ["ETH_PRIVATE_KEY"],
+        "logger": logger,
+    }
+
+    logger.info(f"Creating trade for {auth['address']} on {market} for {amount} {side}")
+    client = RyskClient(**auth)
+    while retries:
+        try:
+            trade = client.create_order(market, amount, side)
+            logger.info(f"Created trade: {trade}")
+            break
+        except Exception as error:  # pylint: disable=W0718
+            logger.error(error)
+
+            logger.error(f"failed to created {retries - 1} attempts remaining")
+            retries -= 1
+
+
+@balances.command("fetch")
+def fetch_balances():
+    """Fetch balances."""
+    auth = {
+        "address": os.environ["ETH_ADDRESS"],
+        "logger": logger,
+    }
+    client = RyskClient(**auth)
+
+    columns = [
+        "symbol",
+        "balance",
+    ]
+    current_balances = [
+        {"symbol": k, "balance": v} for k, v in client.fetch_balances().items()
+    ]
+
+    render_table("Balances", current_balances, columns)
 
 
 if __name__ == "__main__":
