@@ -1,9 +1,12 @@
 """
 Simple client for the rysk contracts implemented in python.
 """
+import logging
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict, List, Optional
+
+from rich import print_json
 
 from rysk_client.src.action_types import ActionType
 from rysk_client.src.collateral import Collateral
@@ -269,6 +272,7 @@ class RyskClient:  # noqa: R0902
             str(self._crypto.address),
             int(amount * 1e18),
         )
+
         if not collateral_approved:
             self._logger.info(
                 f"Approving {collateral_asset} collateral for {self.web3_client.option_exchange.address}"
@@ -278,7 +282,7 @@ class RyskClient:  # noqa: R0902
                 collateral_contract,
                 self.web3_client.option_exchange.address,
                 str(self._crypto.address),
-                int(amount * 1e18),
+                collateral_approved + int(amount * 1e18),
             )
             # we submit and sign the transaction
             result = self.web3_client.sign_and_sumbit(txn, self._crypto.private_key)  # type: ignore
@@ -392,7 +396,7 @@ class RyskClient:  # noqa: R0902
         ).buildTransaction({"from": self._crypto.address})
         return func
 
-    def sell_option(  # pylint: disable=too-many-locals
+    def sell_option(  # noqa
         self,
         market: str,
         amount: float,
@@ -566,8 +570,9 @@ class RyskClient:  # noqa: R0902
             },
         ]
 
-        self._logger.debug("Operate tuple is:")
-        self._logger.debug(operate_tuple)
+        if self._logger.level is logging.DEBUG:
+            self._logger.debug("Operate tuple is:")
+            print_json(data=operate_tuple)
 
         operate_txn = self.web3_client.option_exchange.functions.operate(
             operate_tuple

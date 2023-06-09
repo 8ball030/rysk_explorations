@@ -165,7 +165,8 @@ def list_trades():
 @click.option(
     "--amount", "-a", required=True, type=click.FLOAT, help="Size of the trade."
 )
-def create_trade(market, side, amount):
+@click.option("--retries", "-r", default=3, type=click.INT, help="Number of retries.")
+def create_trade(market, side, amount, retries):
     """Create a trade."""
     auth = {
         "address": os.environ["ETH_ADDRESS"],
@@ -175,8 +176,16 @@ def create_trade(market, side, amount):
 
     logger.info(f"Creating trade for {auth['address']} on {market} for {amount} {side}")
     client = RyskClient(**auth)
-    trade = client.create_order(market, amount, side)
-    logger.info(f"Created trade: {trade}")
+    while retries:
+        try:
+            trade = client.create_order(market, amount, side)
+            logger.info(f"Created trade: {trade}")
+            break
+        except Exception as error:
+            logger.error(error)
+
+            logger.error(f"failed to created {retries - 1} attempts remaining")
+            retries -= 1
 
 
 @balances.command("fetch")

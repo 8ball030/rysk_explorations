@@ -119,7 +119,7 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
             "weth": self.settlement_weth.functions.balanceOf(safe_address).call()
             / 1e18,
             "usdc": self.settlement_usdc.functions.balanceOf(safe_address).call() / 1e6,
-            "eth": self.web3.eth.getBalance(self._crypto.address) / 1e18,
+            "eth": self.web3.eth.get_balance(self._crypto.address) / 1e18,
         }
 
     def watch_trades(self):
@@ -235,7 +235,9 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
         """
         Create an approval transaction.
         """
-        transaction = contract.functions.approve(spender, int(amount)).buildTransaction(
+        transaction = contract.functions.approve(
+            spender, int(amount)
+        ).build_transaction(
             {
                 "from": owner,
                 "nonce": self.web3.eth.get_transaction_count(owner),
