@@ -181,7 +181,7 @@ def create_trade(market, side, amount, retries):
             trade = client.create_order(market, amount, side)
             logger.info(f"Created trade: {trade}")
             break
-        except Exception as error:
+        except Exception as error:  # pylint: disable=W0718
             logger.error(error)
 
             logger.error(f"failed to created {retries - 1} attempts remaining")
