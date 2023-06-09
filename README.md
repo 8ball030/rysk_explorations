@@ -19,72 +19,231 @@ For dev build.
 !pip install -U .
 ```
 
-    Processing /home/tom/Desktop/Fun/rysk_explorations
+    Processing /home/tom/Desktop/Fun/rysk_examples
+    [33m  DEPRECATION: A future pip version will change local packages to be built in-place without first copying to a temporary directory. We recommend you use --use-feature=in-tree-build to test your packages with this new behavior before it becomes the default.
+       pip 21.3 will remove support for this functionality. You can find discussion regarding this at https://github.com/pypa/pip/issues/7555.[0m
       Installing build dependencies ... [?25ldone
     [?25h  Getting requirements to build wheel ... [?25ldone
-    [?25h  Preparing metadata (pyproject.toml) ... [?25ldone
-    [?25hRequirement already satisfied: web3==6.4.0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from rysk-client==0.1.8) (6.4.0)
-    Requirement already satisfied: ccxt<4.0.0,>=3.1.15 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from rysk-client==0.1.8) (3.1.17)
-    Requirement already satisfied: rich-click<2.0.0,>=1.6.1 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from rysk-client==0.1.8) (1.6.1)
-    Requirement already satisfied: jsonschema>=4.0.0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from web3==6.4.0->rysk-client==0.1.8) (4.17.3)
-    Requirement already satisfied: requests>=2.16.0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from web3==6.4.0->rysk-client==0.1.8) (2.28.1)
-    Requirement already satisfied: eth-abi>=4.0.0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from web3==6.4.0->rysk-client==0.1.8) (4.0.0)
-    Requirement already satisfied: eth-account>=0.8.0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from web3==6.4.0->rysk-client==0.1.8) (0.9.0)
-    Requirement already satisfied: aiohttp>=3.7.4.post0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from web3==6.4.0->rysk-client==0.1.8) (3.8.4)
-    Requirement already satisfied: eth-hash[pycryptodome]>=0.5.1 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from web3==6.4.0->rysk-client==0.1.8) (0.5.2)
-    Requirement already satisfied: hexbytes>=0.1.0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from web3==6.4.0->rysk-client==0.1.8) (0.3.0)
-    Requirement already satisfied: lru-dict>=1.1.6 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from web3==6.4.0->rysk-client==0.1.8) (1.1.8)
-    Requirement already satisfied: eth-typing>=3.0.0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from web3==6.4.0->rysk-client==0.1.8) (3.4.0)
-    Requirement already satisfied: eth-utils>=2.1.0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from web3==6.4.0->rysk-client==0.1.8) (2.1.1)
-    Requirement already satisfied: protobuf>=4.21.6 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from web3==6.4.0->rysk-client==0.1.8) (4.23.2)
-    Requirement already satisfied: websockets>=10.0.0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from web3==6.4.0->rysk-client==0.1.8) (11.0.3)
-    Requirement already satisfied: cryptography>=2.6.1 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from ccxt<4.0.0,>=3.1.15->rysk-client==0.1.8) (39.0.1)
-    Requirement already satisfied: aiodns>=1.1.1 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from ccxt<4.0.0,>=3.1.15->rysk-client==0.1.8) (3.0.0)
-    Requirement already satisfied: certifi>=2018.1.18 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from ccxt<4.0.0,>=3.1.15->rysk-client==0.1.8) (2022.6.15)
-    Requirement already satisfied: yarl>=1.7.2 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from ccxt<4.0.0,>=3.1.15->rysk-client==0.1.8) (1.7.2)
-    Requirement already satisfied: setuptools>=60.9.0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from ccxt<4.0.0,>=3.1.15->rysk-client==0.1.8) (67.8.0)
-    Requirement already satisfied: rich>=10.7.0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from rich-click<2.0.0,>=1.6.1->rysk-client==0.1.8) (13.3.1)
-    Requirement already satisfied: click>=7 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from rich-click<2.0.0,>=1.6.1->rysk-client==0.1.8) (8.0.2)
-    Requirement already satisfied: pycares>=4.0.0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from aiodns>=1.1.1->ccxt<4.0.0,>=3.1.15->rysk-client==0.1.8) (4.2.2)
-    Requirement already satisfied: charset-normalizer<4.0,>=2.0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from aiohttp>=3.7.4.post0->web3==6.4.0->rysk-client==0.1.8) (2.1.1)
-    Requirement already satisfied: frozenlist>=1.1.1 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from aiohttp>=3.7.4.post0->web3==6.4.0->rysk-client==0.1.8) (1.3.1)
-    Requirement already satisfied: async-timeout<5.0,>=4.0.0a3 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from aiohttp>=3.7.4.post0->web3==6.4.0->rysk-client==0.1.8) (4.0.2)
-    Requirement already satisfied: aiosignal>=1.1.2 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from aiohttp>=3.7.4.post0->web3==6.4.0->rysk-client==0.1.8) (1.2.0)
-    Requirement already satisfied: multidict<7.0,>=4.5 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from aiohttp>=3.7.4.post0->web3==6.4.0->rysk-client==0.1.8) (6.0.2)
-    Requirement already satisfied: attrs>=17.3.0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from aiohttp>=3.7.4.post0->web3==6.4.0->rysk-client==0.1.8) (22.1.0)
-    Requirement already satisfied: cffi>=1.12 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from cryptography>=2.6.1->ccxt<4.0.0,>=3.1.15->rysk-client==0.1.8) (1.15.1)
-    Requirement already satisfied: parsimonious<0.10.0,>=0.9.0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from eth-abi>=4.0.0->web3==6.4.0->rysk-client==0.1.8) (0.9.0)
-    Requirement already satisfied: eth-rlp>=0.3.0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from eth-account>=0.8.0->web3==6.4.0->rysk-client==0.1.8) (0.3.0)
-    Requirement already satisfied: rlp>=1.0.0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from eth-account>=0.8.0->web3==6.4.0->rysk-client==0.1.8) (3.0.0)
-    Requirement already satisfied: eth-keys>=0.4.0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from eth-account>=0.8.0->web3==6.4.0->rysk-client==0.1.8) (0.4.0)
-    Requirement already satisfied: eth-keyfile>=0.6.0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from eth-account>=0.8.0->web3==6.4.0->rysk-client==0.1.8) (0.6.1)
-    Requirement already satisfied: bitarray>=2.4.0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from eth-account>=0.8.0->web3==6.4.0->rysk-client==0.1.8) (2.7.4)
-    Requirement already satisfied: pycryptodome<4,>=3.6.6 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from eth-hash[pycryptodome]>=0.5.1->web3==6.4.0->rysk-client==0.1.8) (3.15.0)
-    Requirement already satisfied: cytoolz>=0.10.1 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from eth-utils>=2.1.0->web3==6.4.0->rysk-client==0.1.8) (0.12.0)
-    Requirement already satisfied: pyrsistent!=0.17.0,!=0.17.1,!=0.17.2,>=0.14.0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from jsonschema>=4.0.0->web3==6.4.0->rysk-client==0.1.8) (0.18.1)
-    Requirement already satisfied: urllib3<1.27,>=1.21.1 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from requests>=2.16.0->web3==6.4.0->rysk-client==0.1.8) (1.26.12)
-    Requirement already satisfied: idna<4,>=2.5 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from requests>=2.16.0->web3==6.4.0->rysk-client==0.1.8) (3.3)
-    Requirement already satisfied: markdown-it-py<3.0.0,>=2.1.0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from rich>=10.7.0->rich-click<2.0.0,>=1.6.1->rysk-client==0.1.8) (2.2.0)
-    Requirement already satisfied: pygments<3.0.0,>=2.14.0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from rich>=10.7.0->rich-click<2.0.0,>=1.6.1->rysk-client==0.1.8) (2.14.0)
-    Requirement already satisfied: pycparser in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from cffi>=1.12->cryptography>=2.6.1->ccxt<4.0.0,>=3.1.15->rysk-client==0.1.8) (2.21)
-    Requirement already satisfied: toolz>=0.8.0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from cytoolz>=0.10.1->eth-utils>=2.1.0->web3==6.4.0->rysk-client==0.1.8) (0.11.2)
-    Requirement already satisfied: mdurl~=0.1 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from markdown-it-py<3.0.0,>=2.1.0->rich>=10.7.0->rich-click<2.0.0,>=1.6.1->rysk-client==0.1.8) (0.1.2)
-    Requirement already satisfied: regex>=2022.3.15 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from parsimonious<0.10.0,>=0.9.0->eth-abi>=4.0.0->web3==6.4.0->rysk-client==0.1.8) (2023.6.3)
+    [?25h    Preparing wheel metadata ... [?25ldone
+    [?25hCollecting ccxt<4.0.0,>=3.1.15
+      Downloading ccxt-3.1.31-py2.py3-none-any.whl (3.9 MB)
+    [K     |████████████████████████████████| 3.9 MB 3.8 MB/s eta 0:00:01
+    [?25hCollecting web3==6.4.0
+      Downloading web3-6.4.0-py3-none-any.whl (574 kB)
+    [K     |████████████████████████████████| 574 kB 8.9 MB/s eta 0:00:01
+    [?25hRequirement already satisfied: rich-click<2.0.0,>=1.6.1 in /home/tom/.pyenv/versions/3.10.0/lib/python3.10/site-packages (from rysk-client==0.1.9) (1.6.1)
+    Collecting eth-abi>=4.0.0
+      Downloading eth_abi-4.1.0-py3-none-any.whl (27 kB)
+    Requirement already satisfied: hexbytes>=0.1.0 in /home/tom/.pyenv/versions/3.10.0/lib/python3.10/site-packages (from web3==6.4.0->rysk-client==0.1.9) (0.3.0)
+    Collecting protobuf>=4.21.6
+      Downloading protobuf-4.23.2-cp37-abi3-manylinux2014_x86_64.whl (304 kB)
+    [K     |████████████████████████████████| 304 kB 8.2 MB/s eta 0:00:01
+    [?25hRequirement already satisfied: lru-dict>=1.1.6 in /home/tom/.pyenv/versions/3.10.0/lib/python3.10/site-packages (from web3==6.4.0->rysk-client==0.1.9) (1.1.8)
+    Collecting eth-typing>=3.0.0
+      Downloading eth_typing-3.4.0-py3-none-any.whl (6.0 kB)
+    Collecting eth-account>=0.8.0
+      Downloading eth_account-0.9.0-py3-none-any.whl (101 kB)
+    [K     |█████████████████████████████   | 92 kB 8.2 MB/s eta 0:00:01     |████████████████████████████████| 101 kB 4.6 MB/s 
+    [?25hCollecting jsonschema>=4.0.0
+      Using cached jsonschema-4.17.3-py3-none-any.whl (90 kB)
+    Collecting websockets>=10.0.0
+      Downloading websockets-11.0.3-cp310-cp310-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl (129 kB)
+    [K     |████████████████████████████████| 129 kB 6.8 MB/s eta 0:00:01
+    [?25hCollecting eth-utils>=2.1.0
+      Downloading eth_utils-2.1.1-py3-none-any.whl (23 kB)
+    Collecting eth-hash[pycryptodome]>=0.5.1
+      Downloading eth_hash-0.5.2-py3-none-any.whl (8.6 kB)
+    Requirement already satisfied: aiohttp>=3.7.4.post0 in /home/tom/.pyenv/versions/3.10.0/lib/python3.10/site-packages (from web3==6.4.0->rysk-client==0.1.9) (3.8.4)
+    Requirement already satisfied: requests>=2.16.0 in /home/tom/.pyenv/versions/3.10.0/lib/python3.10/site-packages (from web3==6.4.0->rysk-client==0.1.9) (2.30.0)
+    Requirement already satisfied: yarl<2.0,>=1.0 in /home/tom/.pyenv/versions/3.10.0/lib/python3.10/site-packages (from aiohttp>=3.7.4.post0->web3==6.4.0->rysk-client==0.1.9) (1.9.2)
+    Requirement already satisfied: aiosignal>=1.1.2 in /home/tom/.pyenv/versions/3.10.0/lib/python3.10/site-packages (from aiohttp>=3.7.4.post0->web3==6.4.0->rysk-client==0.1.9) (1.3.1)
+    Requirement already satisfied: charset-normalizer<4.0,>=2.0 in /home/tom/.pyenv/versions/3.10.0/lib/python3.10/site-packages (from aiohttp>=3.7.4.post0->web3==6.4.0->rysk-client==0.1.9) (3.1.0)
+    Requirement already satisfied: multidict<7.0,>=4.5 in /home/tom/.pyenv/versions/3.10.0/lib/python3.10/site-packages (from aiohttp>=3.7.4.post0->web3==6.4.0->rysk-client==0.1.9) (6.0.4)
+    Requirement already satisfied: frozenlist>=1.1.1 in /home/tom/.pyenv/versions/3.10.0/lib/python3.10/site-packages (from aiohttp>=3.7.4.post0->web3==6.4.0->rysk-client==0.1.9) (1.3.3)
+    Requirement already satisfied: async-timeout<5.0,>=4.0.0a3 in /home/tom/.pyenv/versions/3.10.0/lib/python3.10/site-packages (from aiohttp>=3.7.4.post0->web3==6.4.0->rysk-client==0.1.9) (4.0.2)
+    Requirement already satisfied: attrs>=17.3.0 in /home/tom/.pyenv/versions/3.10.0/lib/python3.10/site-packages (from aiohttp>=3.7.4.post0->web3==6.4.0->rysk-client==0.1.9) (23.1.0)
+    Requirement already satisfied: certifi>=2018.1.18 in /home/tom/.pyenv/versions/3.10.0/lib/python3.10/site-packages (from ccxt<4.0.0,>=3.1.15->rysk-client==0.1.9) (2022.12.7)
+    Requirement already satisfied: cryptography>=2.6.1 in /home/tom/.pyenv/versions/3.10.0/lib/python3.10/site-packages (from ccxt<4.0.0,>=3.1.15->rysk-client==0.1.9) (40.0.2)
+    Requirement already satisfied: setuptools>=60.9.0 in /home/tom/.pyenv/versions/3.10.0/lib/python3.10/site-packages (from ccxt<4.0.0,>=3.1.15->rysk-client==0.1.9) (67.7.2)
+    Requirement already satisfied: aiodns>=1.1.1 in /home/tom/.pyenv/versions/3.10.0/lib/python3.10/site-packages (from ccxt<4.0.0,>=3.1.15->rysk-client==0.1.9) (3.0.0)
+    Requirement already satisfied: pycares>=4.0.0 in /home/tom/.pyenv/versions/3.10.0/lib/python3.10/site-packages (from aiodns>=1.1.1->ccxt<4.0.0,>=3.1.15->rysk-client==0.1.9) (4.3.0)
+    Requirement already satisfied: cffi>=1.12 in /home/tom/.pyenv/versions/3.10.0/lib/python3.10/site-packages (from cryptography>=2.6.1->ccxt<4.0.0,>=3.1.15->rysk-client==0.1.9) (1.15.1)
+    Requirement already satisfied: pycparser in /home/tom/.pyenv/versions/3.10.0/lib/python3.10/site-packages (from cffi>=1.12->cryptography>=2.6.1->ccxt<4.0.0,>=3.1.15->rysk-client==0.1.9) (2.21)
+    Collecting parsimonious<0.10.0,>=0.9.0
+      Using cached parsimonious-0.9.0.tar.gz (48 kB)
+    Collecting eth-keyfile>=0.6.0
+      Downloading eth_keyfile-0.6.1-py3-none-any.whl (6.5 kB)
+    Requirement already satisfied: rlp>=1.0.0 in /home/tom/.pyenv/versions/3.10.0/lib/python3.10/site-packages (from eth-account>=0.8.0->web3==6.4.0->rysk-client==0.1.9) (1.2.0)
+    Collecting eth-rlp>=0.3.0
+      Using cached eth_rlp-0.3.0-py3-none-any.whl (5.0 kB)
+    Requirement already satisfied: bitarray>=2.4.0 in /home/tom/.pyenv/versions/3.10.0/lib/python3.10/site-packages (from eth-account>=0.8.0->web3==6.4.0->rysk-client==0.1.9) (2.7.3)
+    Collecting eth-keys>=0.4.0
+      Downloading eth_keys-0.4.0-py3-none-any.whl (21 kB)
+    Requirement already satisfied: pycryptodome<4,>=3.6.6 in /home/tom/.pyenv/versions/3.10.0/lib/python3.10/site-packages (from eth-hash[pycryptodome]>=0.5.1->web3==6.4.0->rysk-client==0.1.9) (3.17)
+    Requirement already satisfied: cytoolz>=0.10.1 in /home/tom/.pyenv/versions/3.10.0/lib/python3.10/site-packages (from eth-utils>=2.1.0->web3==6.4.0->rysk-client==0.1.9) (0.12.1)
+    Requirement already satisfied: toolz>=0.8.0 in /home/tom/.pyenv/versions/3.10.0/lib/python3.10/site-packages (from cytoolz>=0.10.1->eth-utils>=2.1.0->web3==6.4.0->rysk-client==0.1.9) (0.12.0)
+    Requirement already satisfied: pyrsistent!=0.17.0,!=0.17.1,!=0.17.2,>=0.14.0 in /home/tom/.pyenv/versions/3.10.0/lib/python3.10/site-packages (from jsonschema>=4.0.0->web3==6.4.0->rysk-client==0.1.9) (0.19.3)
+    Requirement already satisfied: regex>=2022.3.15 in /home/tom/.pyenv/versions/3.10.0/lib/python3.10/site-packages (from parsimonious<0.10.0,>=0.9.0->eth-abi>=4.0.0->web3==6.4.0->rysk-client==0.1.9) (2023.5.5)
+    Requirement already satisfied: urllib3<3,>=1.21.1 in /home/tom/.pyenv/versions/3.10.0/lib/python3.10/site-packages (from requests>=2.16.0->web3==6.4.0->rysk-client==0.1.9) (1.26.15)
+    Requirement already satisfied: idna<4,>=2.5 in /home/tom/.pyenv/versions/3.10.0/lib/python3.10/site-packages (from requests>=2.16.0->web3==6.4.0->rysk-client==0.1.9) (3.4)
+    Requirement already satisfied: rich>=10.7.0 in /home/tom/.pyenv/versions/3.10.0/lib/python3.10/site-packages (from rich-click<2.0.0,>=1.6.1->rysk-client==0.1.9) (13.3.5)
+    Requirement already satisfied: click>=7 in /home/tom/.pyenv/versions/3.10.0/lib/python3.10/site-packages (from rich-click<2.0.0,>=1.6.1->rysk-client==0.1.9) (8.0.2)
+    Requirement already satisfied: pygments<3.0.0,>=2.13.0 in /home/tom/.pyenv/versions/3.10.0/lib/python3.10/site-packages (from rich>=10.7.0->rich-click<2.0.0,>=1.6.1->rysk-client==0.1.9) (2.15.1)
+    Requirement already satisfied: markdown-it-py<3.0.0,>=2.2.0 in /home/tom/.pyenv/versions/3.10.0/lib/python3.10/site-packages (from rich>=10.7.0->rich-click<2.0.0,>=1.6.1->rysk-client==0.1.9) (2.2.0)
+    Requirement already satisfied: mdurl~=0.1 in /home/tom/.pyenv/versions/3.10.0/lib/python3.10/site-packages (from markdown-it-py<3.0.0,>=2.2.0->rich>=10.7.0->rich-click<2.0.0,>=1.6.1->rysk-client==0.1.9) (0.1.2)
+    Collecting rlp>=1.0.0
+      Downloading rlp-3.0.0-py2.py3-none-any.whl (20 kB)
+    Using legacy 'setup.py install' for parsimonious, since package 'wheel' is not installed.
     Building wheels for collected packages: rysk-client
-      Building wheel for rysk-client (pyproject.toml) ... [?25ldone
-    [?25h  Created wheel for rysk-client: filename=rysk_client-0.1.8-py3-none-any.whl size=502097 sha256=b11b92629c38b8e9e13c79cb02a87a28104d78d7262ae3662c364ba00ad48441
-      Stored in directory: /tmp/pip-ephem-wheel-cache-47uzb13y/wheels/85/5d/62/83b40ae2d2c1fc31bec44436912ab30c592085539d92f35254
+      Building wheel for rysk-client (PEP 517) ... [?25ldone
+    [?25h  Created wheel for rysk-client: filename=rysk_client-0.1.9-py3-none-any.whl size=502646 sha256=621ed06d3ca35b970ee5caa17eb02563c0fa04441893b495f3591a1e2324a484
+      Stored in directory: /tmp/pip-ephem-wheel-cache-1mjy9fwl/wheels/d0/5d/c5/06071ec2d9be7dfabf83e13d497e7bd4b06d0041d896c67705
     Successfully built rysk-client
-    [33mWARNING: Error parsing requirements for vulture: [Errno 2] No such file or directory: '/home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages/vulture-2.5.dist-info/METADATA'[0m[33m
-    [0mInstalling collected packages: rysk-client
+    Installing collected packages: eth-typing, eth-hash, eth-utils, rlp, parsimonious, eth-keys, eth-rlp, eth-keyfile, eth-abi, websockets, protobuf, jsonschema, eth-account, web3, ccxt, rysk-client
+      Attempting uninstall: eth-typing
+        Found existing installation: eth-typing 2.3.0
+        Uninstalling eth-typing-2.3.0:
+          Successfully uninstalled eth-typing-2.3.0
+      Attempting uninstall: eth-hash
+        Found existing installation: eth-hash 0.3.3
+        Uninstalling eth-hash-0.3.3:
+          Successfully uninstalled eth-hash-0.3.3
+      Attempting uninstall: eth-utils
+        Found existing installation: eth-utils 1.10.0
+        Uninstalling eth-utils-1.10.0:
+          Successfully uninstalled eth-utils-1.10.0
+      Attempting uninstall: rlp
+        Found existing installation: rlp 1.2.0
+        Uninstalling rlp-1.2.0:
+          Successfully uninstalled rlp-1.2.0
+      Attempting uninstall: parsimonious
+        Found existing installation: parsimonious 0.8.1
+        Uninstalling parsimonious-0.8.1:
+          Successfully uninstalled parsimonious-0.8.1
+        Running setup.py install for parsimonious ... [?25ldone
+    [?25h  Attempting uninstall: eth-keys
+        Found existing installation: eth-keys 0.3.4
+        Uninstalling eth-keys-0.3.4:
+          Successfully uninstalled eth-keys-0.3.4
+      Attempting uninstall: eth-rlp
+        Found existing installation: eth-rlp 0.2.1
+        Uninstalling eth-rlp-0.2.1:
+          Successfully uninstalled eth-rlp-0.2.1
+      Attempting uninstall: eth-keyfile
+        Found existing installation: eth-keyfile 0.5.1
+        Uninstalling eth-keyfile-0.5.1:
+          Successfully uninstalled eth-keyfile-0.5.1
+      Attempting uninstall: eth-abi
+        Found existing installation: eth-abi 2.2.0
+        Uninstalling eth-abi-2.2.0:
+          Successfully uninstalled eth-abi-2.2.0
+      Attempting uninstall: websockets
+        Found existing installation: websockets 9.1
+        Uninstalling websockets-9.1:
+          Successfully uninstalled websockets-9.1
+      Attempting uninstall: protobuf
+        Found existing installation: protobuf 3.20.3
+        Uninstalling protobuf-3.20.3:
+          Successfully uninstalled protobuf-3.20.3
+      Attempting uninstall: jsonschema
+        Found existing installation: jsonschema 3.2.0
+        Uninstalling jsonschema-3.2.0:
+          Successfully uninstalled jsonschema-3.2.0
+      Attempting uninstall: eth-account
+        Found existing installation: eth-account 0.5.9
+        Uninstalling eth-account-0.5.9:
+          Successfully uninstalled eth-account-0.5.9
+      Attempting uninstall: web3
+        Found existing installation: web3 5.25.0
+        Uninstalling web3-5.25.0:
+          Successfully uninstalled web3-5.25.0
+      Attempting uninstall: ccxt
+        Found existing installation: ccxt 3.0.104
+        Uninstalling ccxt-3.0.104:
+          Successfully uninstalled ccxt-3.0.104
       Attempting uninstall: rysk-client
-        Found existing installation: rysk-client 0.1.8
-        Uninstalling rysk-client-0.1.8:
-          Successfully uninstalled rysk-client-0.1.8
-    Successfully installed rysk-client-0.1.8
-    [33mWARNING: You are using pip version 22.0.4; however, version 23.1.2 is available.
-    You should consider upgrading via the '/home/tom/.pyenv/versions/3.10.4/bin/python3.10 -m pip install --upgrade pip' command.[0m[33m
-    [0m
+        Found existing installation: rysk-client 0.1.0
+        Uninstalling rysk-client-0.1.0:
+          Successfully uninstalled rysk-client-0.1.0
+    [31mERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
+    py-ecc 5.2.0 requires eth-typing<3.0.0,>=2.1.0, but you have eth-typing 3.4.0 which is incompatible.
+    py-ecc 5.2.0 requires eth-utils<2,>=1.3.0, but you have eth-utils 2.1.1 which is incompatible.
+    ethereum 2.3.2 requires rlp<2.0.0,>=1.0.1, but you have rlp 3.0.0 which is incompatible.[0m
+    Successfully installed ccxt-3.1.31 eth-abi-4.1.0 eth-account-0.9.0 eth-hash-0.5.2 eth-keyfile-0.6.1 eth-keys-0.4.0 eth-rlp-0.3.0 eth-typing-3.4.0 eth-utils-2.1.1 jsonschema-4.17.3 parsimonious-0.9.0 protobuf-4.23.2 rlp-3.0.0 rysk-client-0.1.9 web3-6.4.0 websockets-11.0.3
+    [33mWARNING: You are using pip version 21.2.3; however, version 23.1.2 is available.
+    You should consider upgrading via the '/home/tom/.pyenv/versions/3.10.0/bin/python3.10 -m pip install --upgrade pip' command.[0m
+
+
+
+```python
+
+```
+
+
+```python
+
+```
+
+## Cli Tool
+
+The application is also bundled as cli tool to allow users to interact with the protocol from the cli.
+
+
+
+```python
+! rysk
+```
+
+    [1m                                                                                [0m
+    [1m [0m[1;33mUsage: [0m[1mrysk [[0m[1;36mOPTIONS[0m[1m] [0m[1;36mCOMMAND[0m[1m [[0m[1;36mARGS[0m[1m]...[0m[1m                                       [0m[1m [0m
+    [1m                                                                                [0m
+     Rysk client command line interface.                                            
+                                                                                    
+    [2m╭─[0m[2m Options [0m[2m───────────────────────────────────────────────────────────────────[0m[2m─╮[0m
+    [2m│[0m [1;36m-[0m[1;36m-log[0m[1;36m-level[0m  [1;32m-l[0m  [1;2;33m[[0m[1;33mDEBUG[0m[1;2;33m|[0m[1;33mINFO[0m[1;2;33m|[0m[1;33mWARNING[0m[1;2;33m|[0m[1;33mERROR[0m[1;2;33m|[0m[1;33mCR[0m  Logging level.                [2m│[0m
+    [2m│[0m                  [1;33mITICAL[0m[1;2;33m][0m[1;33m                     [0m                                [2m│[0m
+    [2m│[0m [1;36m-[0m[1;36m-help[0m           [1;33m                            [0m  Show this message and exit.   [2m│[0m
+    [2m╰──────────────────────────────────────────────────────────────────────────────╯[0m
+    [2m╭─[0m[2m Commands [0m[2m──────────────────────────────────────────────────────────────────[0m[2m─╮[0m
+    [2m│[0m [1;36mbalances             [0m[1;36m [0m Interact with balances.                               [2m│[0m
+    [2m│[0m [1;36mmarkets              [0m[1;36m [0m Interact with markets.                                [2m│[0m
+    [2m│[0m [1;36mpositions            [0m[1;36m [0m Interact with positions.                              [2m│[0m
+    [2m│[0m [1;36mtickers              [0m[1;36m [0m Interact with tickers.                                [2m│[0m
+    [2m│[0m [1;36mtrades               [0m[1;36m [0m Interact with trades.                                 [2m│[0m
+    [2m╰──────────────────────────────────────────────────────────────────────────────╯[0m
+    
+
+
+### Markets
+We can fetch data about the markets as so;
+
+
+```python
+! rysk markets fetch
+```
+
+    [3m                              Markets                               [0m
+    ┏━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━━┓
+    ┃[1m [0m[1mid                [0m[1m [0m┃[1m [0m[1mexpiration[0m[1m [0m┃[1m [0m[1mstrike[0m[1m [0m┃[1m [0m[1mbid      [0m[1m [0m┃[1m [0m[1mask      [0m[1m [0m┃
+    ┡━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━━┩
+    │ ETH-16JUN23-1950-C │ 1686902400 │ 1950.0 │ 11.360294 │ 11.771131 │
+    │ ETH-16JUN23-1900-C │ 1686902400 │ 1900.0 │ 36.081166 │ 36.704213 │
+    │ ETH-16JUN23-1850-C │ 1686902400 │ 1850.0 │ 42.817191 │ 43.6451   │
+    │ ETH-16JUN23-1800-C │ 1686902400 │ 1800.0 │ 68.25092  │ 69.147332 │
+    │ ETH-16JUN23-1900-P │ 1686902400 │ 1900.0 │           │           │
+    │ ETH-16JUN23-1850-P │ 1686902400 │ 1850.0 │ 59.724482 │ 60.813081 │
+    │ ETH-16JUN23-1800-P │ 1686902400 │ 1800.0 │ 13.625934 │ 14.111028 │
+    │ ETH-16JUN23-1750-P │ 1686902400 │ 1750.0 │ 17.433291 │ 17.957708 │
+    │ ETH-30JUN23-1800-C │ 1688112000 │ 1800.0 │           │           │
+    │ ETH-30JUN23-1900-C │ 1688112000 │ 1900.0 │ 81.221422 │ 83.880381 │
+    │ ETH-30JUN23-2000-C │ 1688112000 │ 2000.0 │ 36.841275 │ 38.798264 │
+    │ ETH-30JUN23-2100-C │ 1688112000 │ 2100.0 │ 44.43844  │ 46.112509 │
+    │ ETH-30JUN23-1700-P │ 1688112000 │ 1700.0 │ 39.223424 │ 41.326081 │
+    │ ETH-30JUN23-1800-P │ 1688112000 │ 1800.0 │ 60.720471 │ 63.676246 │
+    │ ETH-30JUN23-1900-P │ 1688112000 │ 1900.0 │ 88.051645 │ 90.799835 │
+    │ ETH-30JUN23-1600-P │ 1688112000 │ 1600.0 │ 33.600252 │ 35.223619 │
+    └────────────────────┴────────────┴────────┴───────────┴───────────┘
+
 
 # Usage
 

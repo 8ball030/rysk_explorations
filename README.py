@@ -23,10 +23,42 @@
 get_ipython().system('pip install -U .')
 
 
-# # Usage
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# ## Cli Tool
+# 
+# The application is also bundled as cli tool to allow users to interact with the protocol from the cli.
 # 
 
 # In[2]:
+
+
+get_ipython().system(' rysk')
+
+
+# ### Markets
+# We can fetch data about the markets as so;
+
+# In[3]:
+
+
+get_ipython().system(' rysk markets fetch')
+
+
+# # Usage
+# 
+
+# In[4]:
 
 
 from rysk_client.src.utils import get_web3
@@ -39,7 +71,7 @@ web3.is_connected()
 # 
 # Clients can be created from the rysk client module.
 
-# In[3]:
+# In[5]:
 
 
 from rysk_client.client import RyskClient
@@ -60,7 +92,7 @@ client
 # The client can fetch markets as so;
 # 
 
-# In[4]:
+# In[6]:
 
 
 markets = client.fetch_markets()
@@ -71,7 +103,7 @@ markets[0]
 # 
 # Tickers can be fetched from the client as so;
 
-# In[5]:
+# In[7]:
 
 
 tickers = client.fetch_tickers()
@@ -91,7 +123,7 @@ tickers[0]
 # 
 # 
 
-# In[6]:
+# In[8]:
 
 
 positions = client.fetch_positions()
@@ -100,13 +132,13 @@ positions[0]
 
 # # Tests
 
-# In[7]:
+# In[9]:
 
 
 get_ipython().system('make test')
 
 
-# In[8]:
+# In[10]:
 
 
 get_ipython().system('make fmt lint')
