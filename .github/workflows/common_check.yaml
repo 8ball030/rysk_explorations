@@ -42,7 +42,7 @@ jobs:
 
       - name: Install Host Dependencies
         run: |
-          poetry run python scripts/install.py
+          poetry run python script/install.py
 
       - name: Lint
         run: |
