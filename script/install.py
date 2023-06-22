@@ -5,11 +5,9 @@ Installations for the necessary packages.
 import os
 from dataclasses import dataclass
 
-# we use the rich progress bar to show the progress of the installation
-
 from rich.progress import track
-from rysk_client.src.utils import get_logger
 
+from rysk_client.src.utils import get_logger
 
 logger = get_logger()
 
@@ -44,7 +42,14 @@ def install_dependencies() -> None:
         (
             "rustc",
             "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh",
-        )
+        ),
+        (
+            "anvil",
+            "git clone https://github.com/foundry-rs/foundry && "
+            + "cd foundry && "
+            + "cargo install --path ./anvil --bins --locked --force && "
+            + "rm -rf ../foundry",
+        ),
     ]
     logger.info(f"Installing {len(dependencies)} dependencies")
     for dependency in track(dependencies):
