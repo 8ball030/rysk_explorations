@@ -41,17 +41,17 @@ def install_dependencies() -> None:
     install the dependencies
     """
     dependencies = [
-        HostDependency(
+        (
             "rustc",
             "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh",
-        ),
-        HostDependency("rysk", "poetry install"),
+        )
     ]
     logger.info(f"Installing {len(dependencies)} dependencies")
     for dependency in track(dependencies):
-        if not dependency.is_present():
-            logger.info(f"Installing {dependency.name}")
-            dependency.install()
+        dep = HostDependency(*dependency)
+        if not dep.is_present():
+            logger.info(f"Installing {dep.name}")
+            dep.install()
     logger.info("Done!")
 
 
