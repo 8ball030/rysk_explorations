@@ -1,7 +1,6 @@
 """
 Collection of tests to check known contract calls against a fork.
 """
-import os
 import subprocess
 import time
 from dataclasses import dataclass
@@ -11,11 +10,6 @@ from typing import Optional
 import psutil
 import pytest
 import requests
-
-from rysk_client.client import RyskClient
-from rysk_client.src.constants import TESTNET_RPC_URL
-
-DEFAULT_FORK_BLOCK_NUMBER = 27433769
 
 
 @dataclass
@@ -76,30 +70,6 @@ class LocalFork:
             wait += 1
             if wait > 10:
                 raise TimeoutError("Local fork did not start in time.")
-
-
-@pytest.fixture
-def local_fork():
-    """Use a local fork to test contract calls."""
-    fork = LocalFork(TESTNET_RPC_URL, DEFAULT_FORK_BLOCK_NUMBER)
-    fork.run()
-    yield fork
-    fork.stop()
-
-
-@pytest.fixture
-def client(local_fork):
-    """Get the rysk client."""
-
-    crypto = {
-        "address": os.environ["ETH_ADDRESS"],
-        "private_key": os.environ["ETH_PRIVATE_KEY"],
-    }
-    client = RyskClient(**crypto)
-    client.web3_client.web3.provider.endpoint_uri = (
-        f"{local_fork.host}:{local_fork.port}"
-    )
-    return client
 
 
 def test_local_fork(local_fork):
