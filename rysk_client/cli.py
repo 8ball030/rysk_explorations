@@ -7,6 +7,7 @@ import os
 import rich_click as click
 
 from rysk_client.client import RyskClient
+from rysk_client.src.constants import NULL_ADDRESS
 from rysk_client.src.utils import get_logger, render_table
 
 global logger  # pylint: disable=W0604
@@ -85,7 +86,8 @@ def fetch_tickers(sort, market):
 
 
 @positions.command("list")
-def list_positions():
+@click.option("--expired", "-e", is_flag=True, help="Include expired positions.")
+def list_positions(expired):
     """List positions."""
     if "ETH_ADDRESS" not in os.environ:
         raise ValueError("ETH_ADDRESS environment variable not set.")
@@ -99,7 +101,7 @@ def list_positions():
     logger.info(f"Fetching positions for {auth['address']}")
 
     client = RyskClient(**auth)
-    positions = client.fetch_positions()
+    positions = client.fetch_positions(expired=expired)
     columns = [
         "symbol",
         "side",
@@ -128,11 +130,40 @@ def close():
 
 
 @positions.command("settle")
-def settle():
+@click.option(
+    "--vault_ids",
+    "-v",
+    required=True,
+    type=click.STRING,
+)
+def settle(vault_ids):
     """Settle a position."""
-    client = RyskClient(logger=logger)
-    assert client.web3_client.web3.is_connected()
-    raise NotImplementedError
+    auth = {
+        "address": os.environ["ETH_ADDRESS"],
+        "private_key": os.environ["ETH_PRIVATE_KEY"],
+        "logger": logger,
+    }
+    vault_ids_list = [int(vault_id) for vault_id in vault_ids.split(",")]
+
+    logger.info(f"Settling vault {vault_ids} for {auth['address']}")
+    client = RyskClient(**auth)
+    if not client.web3_client.web3.is_connected():
+        raise ConnectionError("Web3 client not connected.")
+    vaults = dict(client.web3_client.fetch_user_vaults(auth["address"]))
+    for vault_id in vault_ids_list:
+
+        if vault_id not in vaults:
+            raise ValueError(f"Vault {vault_id} not found for {auth['address']}")
+        if vaults[vault_id] == NULL_ADDRESS:
+            raise ValueError(
+                f"Vault {vault_id} has already been settled for {auth['address']}"
+            )
+    for vault_id in vault_ids_list:
+        result = client.settle_vault(int(vault_id))
+        if result:
+            logger.info(f"Successfully settled vault {vault_id}. Transaction: {result}")
+        else:
+            logger.error(f"Failed to settle vault {vault_id}.")
 
 
 @positions.command("redeem")

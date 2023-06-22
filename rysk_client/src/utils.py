@@ -44,9 +44,11 @@ def get_contract(name, web3):
     return web3.eth.contract(**res)
 
 
-def get_web3() -> Web3:
+def get_web3(rpc_url: Optional[str] = None) -> Web3:
     """Returns a web3 instance connected to RPC_URL"""
-    web3 = Web3(Web3.HTTPProvider(RPC_URL))
+    if rpc_url is None:
+        rpc_url = RPC_URL
+    web3 = Web3(Web3.HTTPProvider(rpc_url))
     return web3
 
 
