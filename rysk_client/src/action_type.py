@@ -18,3 +18,14 @@ class ActionType(Enum):
     REDEEM = 8
     CALL = 9
     LIQUIDATE = 10
+
+
+class RyskActionType(Enum):
+    """
+    Enum to specify the type of action to be performed by the client.
+    """
+
+    ISSUE = 0
+    BUY_OPTION = 1
+    SELL_OPTION = 2
+    CLOSE_OPTION = 3

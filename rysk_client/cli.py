@@ -245,22 +245,13 @@ def list_trades():
 @click.option(
     "--amount", "-a", required=True, type=click.FLOAT, help="Size of the trade."
 )
-@click.option("--retries", "-r", default=3, type=click.INT, help="Number of retries.")
 @click.pass_context
-def create_trade(ctx, market, side, amount, retries):
+def create_trade(ctx, market, side, amount):
     """Create a trade."""
     client = ctx.obj["client"]
     logger = ctx.obj["logger"]
-    while retries:
-        try:
-            trade = client.create_order(market, amount, side)
-            logger.info(f"Created trade: {trade}")
-            break
-        except Exception as error:  # pylint: disable=W0718
-            logger.error(error)
-
-            logger.error(f"failed to created {retries - 1} attempts remaining")
-            retries -= 1
+    trade = client.create_order(market, amount, side)
+    logger.info(f"Created trade: {trade}")
 
 
 if __name__ == "__main__":

@@ -137,3 +137,21 @@ def test_redeem_market_from_str(market, client):
     """Test that the otoken can be used to retrieve and redeem."""
     result = client.redeem_market(market)
     assert result, "Transaction failed."
+
+
+@pytest.mark.parametrize(
+    "market,amount",
+    [
+        ("ETH-30JUN23-1900-C", 5),
+        ("ETH-30JUN23-2000-C", 5),
+        ("ETH-30JUN23-1800-P", 5),
+        ("ETH-30JUN23-1900-P", 5),
+    ],
+)
+def test_client_can_buy(client, market, amount):
+    """Test that the otoken can be used to retrieve and redeem.
+    example tx: 0x3200b84acc909d0d9b19f0832a5529f42eaf2bda8330eb5a757c15d02dc69fe4
+    market
+    """
+    txn = client.buy_option(market, amount)
+    assert txn, "Transaction failed."
