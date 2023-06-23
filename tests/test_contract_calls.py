@@ -11,6 +11,8 @@ import psutil
 import pytest
 import requests
 
+from tests.constants import DEFAULT_FORK_BLOCK_NUMBER
+
 
 @dataclass
 class LocalFork:
