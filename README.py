@@ -55,23 +55,33 @@ get_ipython().system(' rysk')
 get_ipython().system(' rysk markets fetch')
 
 
-# # Usage
+# # Positions
 # 
+# We can view the current positions, along with those which are expired.
 
 # In[4]:
 
 
-from rysk_client.src.utils import get_web3
+get_ipython().system(' export ETH_ADDRESS=0x9B8a204636a7aa9c33053d9C3A828720d32212e8 &&    export ETH_PRIVATE_KEY=0x75cc9212e9e1243b9a3e5db5012f39469254088e33363324ad94dd0b212d7efa &&      rysk positions list')
 
-web3 = get_web3()
-web3.is_connected()
+
+# In[5]:
+
+
+get_ipython().system(' export ETH_ADDRESS=0x9B8a204636a7aa9c33053d9C3A828720d32212e8 &&    export ETH_PRIVATE_KEY=0x75cc9212e9e1243b9a3e5db5012f39469254088e33363324ad94dd0b212d7efa &&      rysk positions list --expired')
+
+
+# In[ ]:
+
+
+
 
 
 # ## Creating a Client 
 # 
 # Clients can be created from the rysk client module.
 
-# In[5]:
+# In[6]:
 
 
 from rysk_client.client import RyskClient
@@ -92,7 +102,7 @@ client
 # The client can fetch markets as so;
 # 
 
-# In[6]:
+# In[7]:
 
 
 markets = client.fetch_markets()
@@ -103,7 +113,7 @@ markets[0]
 # 
 # Tickers can be fetched from the client as so;
 
-# In[7]:
+# In[8]:
 
 
 tickers = client.fetch_tickers()
@@ -123,7 +133,7 @@ tickers[0]
 # 
 # 
 
-# In[8]:
+# In[9]:
 
 
 positions = client.fetch_positions()
@@ -132,13 +142,13 @@ positions[0]
 
 # # Tests
 
-# In[9]:
+# In[10]:
 
 
 get_ipython().system('make test')
 
 
-# In[10]:
+# In[11]:
 
 
 get_ipython().system('make fmt lint')
