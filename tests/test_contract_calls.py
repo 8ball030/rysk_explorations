@@ -101,3 +101,9 @@ def test_fails_to_settle_vault(client):
     """Test that the local fork is running."""
     with pytest.raises(Exception):
         client.settle_vault(1000000)
+
+
+def test_redeems_o_token():
+    """Test that the local fork is running.
+    example tx "0xcc525c8407647d314b68105a06d3f55ff1657186853c9678723a249ee37279d0"
+    """
