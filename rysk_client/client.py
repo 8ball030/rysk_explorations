@@ -6,12 +6,14 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
+import web3
 from rich import print_json
 
 from rysk_client.src.action_type import ActionType
 from rysk_client.src.collateral import Collateral
-from rysk_client.src.constants import NULL_ADDRESS, NULL_DATA, RPC_URL
+from rysk_client.src.constants import NULL_ADDRESS, RPC_URL
 from rysk_client.src.crypto import EthCrypto
+from rysk_client.src.operation_factory import buy
 from rysk_client.src.order_side import OrderSide
 from rysk_client.src.pnl_calculator import PnlCalculator, Trade
 from rysk_client.src.position_side import PositionSide
@@ -320,9 +322,6 @@ class RyskClient:  # noqa: R0902
         # we format 2 decimal places
         self._logger.info(f"Acceptable premium: ${acceptable_premium:.2f}")
 
-        series = rysk_option_market.to_series()  # type: ignore
-
-        vault_id = 20
         user_vaults = self.web3_client.fetch_user_vaults(
             self._crypto.address
         )  # pylint: disable=E1120
@@ -331,79 +330,25 @@ class RyskClient:  # noqa: R0902
             self._logger.info("No vaults found. Creating one.")
             raise NotImplementedError("No vaults found. Creating one.")
         # do we need to use an alternative aorder of operations?
-
-        operate_tuple = [
-            {
-                "operation": 0,
-                "operationQueue": [
-                    {
-                        "actionType": ActionType.DEPOSIT_COLLATERAL.value,
-                        "owner": self._crypto.address,
-                        "secondAddress": self.web3_client.option_exchange.address,
-                        "asset": Collateral.from_symbol("weth").value,
-                        "vaultId": vault_id,
-                        "amount": 0,
-                        "optionSeries": {
-                            "expiration": 1,
-                            "strike": 1,
-                            "isPut": bool(series["isPut"]),
-                            "underlying": NULL_ADDRESS,
-                            "strikeAsset": NULL_ADDRESS,
-                            "collateral": NULL_ADDRESS,
-                        },
-                        "indexOrAcceptablePremium": 0,
-                        "data": "0x0000000000000000000000000000000000000000",
-                    },
-                    {
-                        "actionType": ActionType.MINT_SHORT_OPTION.value,
-                        "owner": NULL_ADDRESS,
-                        "secondAddress": str(self._crypto.address),
-                        "asset": NULL_ADDRESS,
-                        "vaultId": 0,
-                        "amount": int(_amount),
-                        "optionSeries": {
-                            "expiration": 1,
-                            "strike": 1,
-                            "isPut": True,
-                            "underlying": NULL_ADDRESS,
-                            "strikeAsset": NULL_ADDRESS,
-                            "collateral": NULL_ADDRESS,
-                        },
-                        "indexOrAcceptablePremium": 0,
-                        "data": "0x0000000000000000000000000000000000000000",
-                    },
-                ],
-            },
-            {
-                "operation": 1,
-                "operationQueue": [
-                    {
-                        "actionType": ActionType.BURN_SHORT_OPTION.value,
-                        "owner": NULL_ADDRESS,
-                        "secondAddress": self._crypto.address,
-                        "asset": NULL_ADDRESS,
-                        "vaultId": 0,
-                        "amount": int(_amount),
-                        "optionSeries": {
-                            "expiration": int(series["expiration"]),
-                            "strike": int(series["strike"]),
-                            "isPut": True,
-                            "underlying": Collateral.from_symbol("weth").value,
-                            "strikeAsset": Collateral.from_symbol("usdc").value,
-                            "collateral": Collateral.from_symbol("weth").value,
-                        },
-                        "indexOrAcceptablePremium": int(_amount),
-                        "data": NULL_DATA,
-                    },
-                ],
-            },
-        ]
+        operate_tuple = buy(
+            int(acceptable_premium * 1e8),
+            owner_address=self._crypto.address,  # pylint: disable=E1120
+            amount=int(_amount),
+            option_market=rysk_option_market,
+        )
 
         # buy tx
-        self._logger.info(f"Passing:\n{operate_tuple}")
+        self._logger.debug(f"Passing:\n{operate_tuple}")
 
-        func = self.web3_client.option_exchange.functions.operate(operate_tuple)  #
-        return func
+        try:
+            txn = self.web3_client.option_exchange.functions.operate(
+                [operate_tuple]
+            ).build_transaction({"from": self._crypto.address})
+        except web3.exceptions.ContractCustomError as error:
+            self._logger.error("Transaction failed due to incorrect parameters.")
+            raise ValueError(error) from error
+
+        return txn
 
     def sell_option(  # noqa
         self,
@@ -603,3 +548,17 @@ class RyskClient:  # noqa: R0902
         self._logger.info(f"Settling vault {vault_id}...")
         txn = self.web3_client.settle_vault(vault_id=vault_id)
         return self.web3_client.sign_and_sumbit(txn, self._crypto.private_key)
+
+    def redeem_otoken(self, otoken_id: str, amount: int):
+        """Redeem otoken."""
+        self._logger.info(f"Redeeming otoken {otoken_id}...")
+        txn = self.web3_client.redeem_otoken(otoken_id=otoken_id, amount=amount)
+        return self.web3_client.sign_and_sumbit(txn, self._crypto.private_key)
+
+    def redeem_market(self, market: str):
+        """Redeem otoken."""
+        self._logger.info(f"Redeeming market {market}...")
+        rysk_option_market = RyskOptionMarket.from_str(market)
+        otoken_address = self.web3_client.get_otoken(rysk_option_market.to_series())
+        amount = self.web3_client.get_otoken_balance(otoken_address) / 10**8
+        return self.redeem_otoken(otoken_address, amount)

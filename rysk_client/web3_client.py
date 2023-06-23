@@ -12,7 +12,7 @@ from web3.contract import Contract
 
 from rysk_client.src.action_type import ActionType
 from rysk_client.src.collateral import Collateral
-from rysk_client.src.constants import NULL_ADDRESS, RPC_URL, WSS_URL
+from rysk_client.src.constants import NULL_ADDRESS, NULL_DATA, RPC_URL, WSS_URL
 from rysk_client.src.crypto import EthCrypto
 from rysk_client.src.order import Order
 from rysk_client.src.order_side import OrderSide
@@ -68,6 +68,8 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
         self._logger = logger or get_logger()
         self._processed_tx: deque = deque(maxlen=100)
         self._crypto = crypto
+
+        self.otoken = get_contract("otoken", self.web3)
 
     def get_options_prices(
         self,
@@ -302,3 +304,41 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
                 "nonce": self.web3.eth.get_transaction_count(self._crypto.address),  # type: ignore
             }
         )
+
+    def redeem_otoken(
+        self,
+        otoken_id: str,
+        amount: int,
+    ):
+        """
+        Build the transaction to redeem the otoken.
+        """
+        self._logger.info(
+            f"Redeeming {amount} of {self.web3.to_checksum_address(otoken_id)}"
+        )
+        amount = int(amount * 1e8)
+        operate_tuple = [
+            {
+                "actionType": 8,
+                "owner": NULL_ADDRESS,
+                "secondAddress": self._crypto.address,  # type: ignore
+                "asset": otoken_id,
+                "vaultId": 0,
+                "amount": amount,
+                "index": 0,
+                "data": NULL_DATA,
+            }
+        ]
+        return self.opyn_controller.functions.operate(operate_tuple).build_transaction(
+            {
+                "from": self._crypto.address,  # type: ignore
+                "nonce": self.web3.eth.get_transaction_count(self._crypto.address),  # type: ignore
+            }
+        )
+
+    def get_otoken_balance(self, otoken_id: str):
+        """
+        Get the otoken balance.
+        """
+        otoken = get_contract("otoken", self.web3, otoken_id)
+        return otoken.functions.balanceOf(self._crypto.address).call()  # type: ignore

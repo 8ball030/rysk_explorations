@@ -33,7 +33,7 @@ def get_logger():
     return logger
 
 
-def get_contract(name, web3):
+def get_contract(name, web3, address=None):
     """Returns a web3 contract instance for the given contract name"""
     path = os.path.join(os.path.dirname(__file__), "..")
     spec = ADDRESSES[name]
@@ -42,6 +42,8 @@ def get_contract(name, web3):
     res = deepcopy(spec)
     del res["path"]
     res["abi"] = abi
+    if address is not None:
+        res["address"] = address
     return web3.eth.contract(**res)
 
 

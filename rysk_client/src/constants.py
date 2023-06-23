@@ -105,7 +105,12 @@ ADDRESSES = {
         "path": "contracts/interfaces/I_ERC20.sol/I_ERC20.json",
         "address": "0x3b3a1dE07439eeb04492Fa64A889eE25A130CDd3",
     },
+    "otoken": {
+        "path": "contracts/tokens/MintableERC20.sol/MintableERC20.json",
+        "address": None,
+    },
 }
+
 
 RPC_URL = os.environ.get("RPC_URL", "https://arbitrum-goerli.rpc.thirdweb.com")
 TESTNET_RPC_URL = "https://arbitrum-goerli.rpc.thirdweb.com"
