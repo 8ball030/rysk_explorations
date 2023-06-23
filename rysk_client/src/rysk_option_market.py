@@ -12,6 +12,7 @@ from rysk_client.src.utils import get_contract
 
 HUMAN_NUMBER_FMT = 1e18
 HUMAN_NUMBER_FMT_USDC = 1e6
+EXPIRATION_TIME = "09:00:00"
 
 
 @dataclass
@@ -219,6 +220,20 @@ class RyskOptionMarket:
             if self.is_put
             else Collateral.WETH.value,
         }
+
+    @classmethod
+    def from_str(cls, name: str):
+        """Returns a RyskOptionMarket from a name"""
+        _name = name.split("-")
+        _expiration = int(
+            datetime.strptime(
+                f"{_name[1]}T{EXPIRATION_TIME}", "%d%b%yT%H:%M:%S"
+            ).timestamp()
+        )
+
+        _strike = int(_name[2]) * 10**18
+        _is_put = _name[3] == "P"
+        return cls(_strike, _expiration, _is_put)
 
 
 class RyskOptionMarketManager:

@@ -603,3 +603,9 @@ class RyskClient:  # noqa: R0902
         self._logger.info(f"Settling vault {vault_id}...")
         txn = self.web3_client.settle_vault(vault_id=vault_id)
         return self.web3_client.sign_and_sumbit(txn, self._crypto.private_key)
+
+    def redeem_otoken(self, otoken_id: str, amount: int):
+        """Redeem otoken."""
+        self._logger.info(f"Redeeming otoken {otoken_id}...")
+        txn = self.web3_client.redeem_otoken(otoken_id=otoken_id, amount=amount)
+        return self.web3_client.sign_and_sumbit(txn, self._crypto.private_key)

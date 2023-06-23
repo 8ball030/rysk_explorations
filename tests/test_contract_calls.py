@@ -11,6 +11,7 @@ import psutil
 import pytest
 import requests
 
+from rysk_client.src.rysk_option_market import RyskOptionMarket
 from tests.constants import DEFAULT_FORK_BLOCK_NUMBER
 
 
@@ -103,7 +104,26 @@ def test_fails_to_settle_vault(client):
         client.settle_vault(1000000)
 
 
-def test_redeems_o_token():
+def test_redeems_o_token(client):
     """Test that the local fork is running.
     example tx "0xcc525c8407647d314b68105a06d3f55ff1657186853c9678723a249ee37279d0"
     """
+    result = client.redeem_otoken(
+        "0x1CEc2D215aa46bFa81d3304E57D5171e814329F7", 29  # oToken address
+    )
+    assert result, "Transaction failed."
+
+
+@pytest.mark.parametrize(
+    "market,amount",
+    [
+        ("ETH-02JUN23-1900-P", 30),
+        ("ETH-09JUN23-1900-P", 360),
+    ],
+)
+def test_retieve_and_redeem(market, amount, client):
+    """Test that the otoken can be used to retrieve and redeem."""
+    rysk_option_market = RyskOptionMarket.from_str(market)
+    otoken_address = client.web3_client.get_otoken(rysk_option_market.to_series())
+    result = client.redeem_otoken(otoken_address, amount)
+    assert result, "Transaction failed."
