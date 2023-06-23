@@ -12,7 +12,7 @@ from rysk_client.src.utils import get_contract
 
 HUMAN_NUMBER_FMT = 1e18
 HUMAN_NUMBER_FMT_USDC = 1e6
-EXPIRATION_TIME = "09:00:00"
+EXPIRATION_TIME = "08:00:00"
 
 
 @dataclass
@@ -225,13 +225,11 @@ class RyskOptionMarket:
     def from_str(cls, name: str):
         """Returns a RyskOptionMarket from a name"""
         _name = name.split("-")
-        _expiration = int(
-            datetime.strptime(
-                # we need to add the UTC timezone to the string to parse it correctly
-                f"{_name[1]}T{EXPIRATION_TIME}UTC",
-                "%d%b%yT%H:%M:%S%Z",
-            ).timestamp()
+        expiration_date = datetime.strptime(
+            f"{_name[1]}T{EXPIRATION_TIME}+00:00",
+            "%d%b%yT%H:%M:%S%z",
         )
+        _expiration = int(expiration_date.timestamp())
 
         _strike = int(_name[2]) * 10**18
         _is_put = _name[3] == "P"
