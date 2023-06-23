@@ -8,12 +8,13 @@ from typing import Any, Dict, List, Optional
 
 from rich import print_json
 
-from rysk_client.src.action_types import ActionType
+from rysk_client.src.action_type import ActionType
 from rysk_client.src.collateral import Collateral
-from rysk_client.src.constants import NULL_ADDRESS, NULL_DATA
+from rysk_client.src.constants import NULL_ADDRESS, NULL_DATA, RPC_URL
 from rysk_client.src.crypto import EthCrypto
+from rysk_client.src.order_side import OrderSide
 from rysk_client.src.pnl_calculator import PnlCalculator, Trade
-from rysk_client.src.position import OrderSide, PositionSide
+from rysk_client.src.position_side import PositionSide
 from rysk_client.src.rysk_option_market import OptionChain, RyskOptionMarket
 from rysk_client.src.subgraph import SubgraphClient
 from rysk_client.src.utils import get_contract, get_logger
@@ -81,6 +82,7 @@ class RyskClient:  # noqa: R0902
         address: Optional[str] = None,
         private_key: Optional[str] = None,
         logger=None,
+        rpc_url: str = RPC_URL,
     ):
         self._markets: List[RyskOptionMarket] = []
         self._tickers = []
@@ -88,8 +90,15 @@ class RyskClient:  # noqa: R0902
         self._option_chain: OptionChain
         self._crypto = EthCrypto(address, private_key)
         self._logger = logger or get_logger()
-        self.web3_client = Web3Client(self._logger, self._crypto)
+        self.web3_client = Web3Client(
+            self._logger,
+            self._crypto,
+            rpc_url=rpc_url,
+        )
         self.subgraph_client = SubgraphClient()
+        self._logger.info(
+            f"Rysk client initialized and connected to the blockchain at {self.web3_client.web3.provider}"
+        )
 
     def fetch_markets(self) -> List[Dict[str, Any]]:
         """
@@ -108,7 +117,9 @@ class RyskClient:  # noqa: R0902
         """Convert an address to a checksum address."""
         return self.web3_client.web3.to_checksum_address(address)
 
-    def fetch_tickers(self, market: Optional[str] = None) -> List[Dict[str, Any]]:
+    def fetch_tickers(
+        self, market: Optional[str] = None, is_active: Optional[bool] = True
+    ) -> List[Dict[str, Any]]:
         """
         Fetchs the ticker from the beyond pricer smart contract.
         """
@@ -116,10 +127,10 @@ class RyskClient:  # noqa: R0902
         if not self._markets:
             self.fetch_markets()
 
-        tradeable = filter(lambda x: x["active"], self._markets)
+        tradeable = filter(lambda x: x["active"] is is_active, self._markets)  # type: ignore
 
         if market:
-            tradeable = filter(lambda x: x["id"] == market, tradeable)
+            tradeable = filter(lambda x: x["id"] == market, tradeable)  # type: ignore
 
         return [market.to_json() for market in self._markets]  # type: ignore
 
@@ -296,7 +307,7 @@ class RyskClient:  # noqa: R0902
             self._logger.info("Fetching Tickers.")
             self.fetch_tickers()  # type: ignore
 
-        # type: ignore
+        self._logger.info(f"Fetching acceptable premium for {market}")
         rysk_option_market: RyskOptionMarket = [f for f in self._markets if f.name == market][0]  # type: ignore
         _amount = amount * 1000000000000000000
         acceptable_premium = self.web3_client.get_options_prices(  # type: ignore
@@ -391,9 +402,7 @@ class RyskClient:  # noqa: R0902
         # buy tx
         self._logger.info(f"Passing:\n{operate_tuple}")
 
-        func = self.web3_client.option_exchange.functions.operate(
-            operate_tuple
-        ).buildTransaction({"from": self._crypto.address})
+        func = self.web3_client.option_exchange.functions.operate(operate_tuple)  #
         return func
 
     def sell_option(  # noqa
@@ -588,3 +597,9 @@ class RyskClient:  # noqa: R0902
         """Fetch balances."""
         self._logger.info("Fetching balances...")
         return self.web3_client.get_balances()
+
+    def settle_vault(self, vault_id):
+        """Settle options."""
+        self._logger.info(f"Settling vault {vault_id}...")
+        txn = self.web3_client.settle_vault(vault_id=vault_id)
+        return self.web3_client.sign_and_sumbit(txn, self._crypto.private_key)

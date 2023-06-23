@@ -108,6 +108,7 @@ ADDRESSES = {
 }
 
 RPC_URL = os.environ.get("RPC_URL", "https://arbitrum-goerli.rpc.thirdweb.com")
+TESTNET_RPC_URL = "https://arbitrum-goerli.rpc.thirdweb.com"
 WSS_URL = os.environ.get(
     "WSS_URL",
     "wss://quaint-billowing-morning.arbitrum-goerli.discover.quiknode.pro/def6c4c783fc626cb8a07d38f845b76b458e6e84/",

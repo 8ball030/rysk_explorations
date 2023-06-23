@@ -36,9 +36,13 @@ jobs:
           virtualenvs-path: ~/my-custom-path
           installer-parallel: true
 
-      - name: Install Adev
+      - name: Install Packages
         run: |
           poetry install -v
+
+      - name: Install Host Dependencies
+        run: |
+          poetry run python script/install.py
 
       - name: Lint
         run: |
@@ -47,7 +51,7 @@ jobs:
 
       - name: Tests
         run: |
-          poetry run adev test -p .
+          poetry run adev test -p . -v
 
       - name: Doc Tests
         run: |
