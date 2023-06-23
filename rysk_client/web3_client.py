@@ -69,6 +69,8 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
         self._processed_tx: deque = deque(maxlen=100)
         self._crypto = crypto
 
+        self.otoken = get_contract("otoken", self.web3)
+
     def get_options_prices(
         self,
         option_data,
@@ -333,3 +335,10 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
                 "nonce": self.web3.eth.get_transaction_count(self._crypto.address),  # type: ignore
             }
         )
+
+    def get_otoken_balance(self, otoken_id: str):
+        """
+        Get the otoken balance.
+        """
+        otoken = get_contract("otoken", self.web3, otoken_id)
+        return otoken.functions.balanceOf(self._crypto.address).call()  # type: ignore

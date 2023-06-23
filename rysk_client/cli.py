@@ -10,8 +10,27 @@ from rysk_client.client import RyskClient
 from rysk_client.src.constants import NULL_ADDRESS
 from rysk_client.src.utils import get_logger, render_table
 
-global logger  # pylint: disable=W0604
-logger = get_logger()
+
+def set_logger(ctx, level):
+    """Set the logger."""
+    if not hasattr(ctx, "logger"):
+        ctx.logger = get_logger()
+        ctx.logger.setLevel(level)
+    return ctx.logger
+
+
+def set_client(ctx):
+    """Set the client."""
+    if not hasattr(ctx, "client"):
+        auth = {
+            "address": os.environ["ETH_ADDRESS"],
+            "private_key": os.environ["ETH_PRIVATE_KEY"],
+            "logger": ctx.logger,
+        }
+        ctx.client = RyskClient(**auth)
+        if not ctx.client.web3_client.web3.is_connected():
+            raise ConnectionError("Web3 client not connected.")
+    return ctx.client
 
 
 @click.group("Rysk client")
@@ -22,9 +41,12 @@ logger = get_logger()
     type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]),
     help="Logging level.",
 )
-def cli(log_level):
+@click.pass_context
+def cli(ctx, log_level):
     """Rysk client command line interface."""
-    logger.setLevel(log_level)
+    ctx.ensure_object(dict)
+    ctx.obj["logger"] = set_logger(ctx, log_level)
+    ctx.obj["client"] = set_client(ctx)
 
 
 @cli.group("markets")
@@ -48,16 +70,34 @@ def trades():
 
 
 @cli.group("balances")
-def balances():
+@click.pass_context
+def balances(ctx):  # pylint: disable=unused-argument
     """Interact with balances."""
+
+
+@balances.command("fetch")
+@click.pass_context
+def fetch_balances(ctx):
+    """Fetch balances."""
+    client = ctx.obj["client"]
+    columns = [
+        "symbol",
+        "balance",
+    ]
+    current_balances = [
+        {"symbol": k, "balance": v} for k, v in client.fetch_balances().items()
+    ]
+
+    render_table("Balances", current_balances, columns)
 
 
 @markets.command("fetch")
 @click.option("--sort", "-s", default="expiration", help="Sort by column.")
 @click.option("--is_active", "-a", default=True, help="Filter by active.")
-def fetch_markets(sort, is_active):
+@click.pass_context
+def fetch_markets(ctx, sort, is_active):
     """Fetch markets."""
-    client = RyskClient()
+    client = ctx.obj["client"]
     markets = client.fetch_markets()
     if is_active:
         markets = [market for market in markets if market["active"]]
@@ -76,9 +116,10 @@ def fetch_markets(sort, is_active):
 @tickers.command("fetch")
 @click.option("--sort", "-s", default="expiration", help="Sort by column.")
 @click.option("--market", "-m", default=None, help="Filter by market.")
-def fetch_tickers(sort, market):
+@click.pass_context
+def fetch_tickers(ctx, sort, market):
     """Fetch tickers."""
-    client = RyskClient()
+    client = ctx.obj["client"]
     tickers = client.fetch_tickers(market)
     sorted_tickers = sorted(tickers, key=lambda x: int(x[sort]))
     columns = ["id", "expiration", "bid", "ask"]
@@ -87,20 +128,14 @@ def fetch_tickers(sort, market):
 
 @positions.command("list")
 @click.option("--expired", "-e", is_flag=True, help="Include expired positions.")
-def list_positions(expired):
+@click.pass_context
+def list_positions(ctx, expired):
     """List positions."""
-    if "ETH_ADDRESS" not in os.environ:
-        raise ValueError("ETH_ADDRESS environment variable not set.")
-    if "ETH_PRIVATE_KEY" not in os.environ:
-        raise ValueError("ETH_PRIVATE_KEY environment variable not set.")
-    auth = {
-        "address": os.environ["ETH_ADDRESS"],
-        "private_key": os.environ["ETH_PRIVATE_KEY"],
-        "logger": logger,
-    }
-    logger.info(f"Fetching positions for {auth['address']}")
-
-    client = RyskClient(**auth)
+    client = ctx.obj["client"]
+    logger = ctx.obj["logger"]
+    logger.info(
+        f"Fetching positions for {client._crypto.address}"  # pylint: disable=protected-access
+    )
     positions = client.fetch_positions(expired=expired)
     columns = [
         "symbol",
@@ -115,16 +150,18 @@ def list_positions(expired):
 
 
 @trades.command("watch")
-def watch():
+@click.pass_context
+def watch(ctx):
     """Watch trades as they occur on the contract."""
-    client = RyskClient(logger=logger)
+    client = ctx.obj["client"]
     client.watch_trades()
 
 
 @positions.command("close")
-def close():
+@click.pass_context
+def close(ctx):
     """Close a position."""
-    client = RyskClient(logger=logger)
+    client = ctx.obj["client"]
     assert client.web3_client.web3.is_connected()
     raise NotImplementedError
 
@@ -136,27 +173,25 @@ def close():
     required=True,
     type=click.STRING,
 )
-def settle(vault_ids):
+@click.pass_context
+def settle(ctx, vault_ids):
     """Settle a position."""
-    auth = {
-        "address": os.environ["ETH_ADDRESS"],
-        "private_key": os.environ["ETH_PRIVATE_KEY"],
-        "logger": logger,
-    }
+    logger = ctx.obj["logger"]
+    client = ctx.obj["client"]
     vault_ids_list = [int(vault_id) for vault_id in vault_ids.split(",")]
+    user_address = client._crypto.address  # pylint: disable=protected-access
 
-    logger.info(f"Settling vault {vault_ids} for {auth['address']}")
-    client = RyskClient(**auth)
+    logger.info(f"Settling vault {vault_ids} for {user_address}")
     if not client.web3_client.web3.is_connected():
         raise ConnectionError("Web3 client not connected.")
-    vaults = dict(client.web3_client.fetch_user_vaults(auth["address"]))
+    vaults = dict(client.web3_client.fetch_user_vaults(user_address))
     for vault_id in vault_ids_list:
 
         if vault_id not in vaults:
-            raise ValueError(f"Vault {vault_id} not found for {auth['address']}")
+            raise ValueError(f"Vault {vault_id} not found for {user_address}")
         if vaults[vault_id] == NULL_ADDRESS:
             raise ValueError(
-                f"Vault {vault_id} has already been settled for {auth['address']}"
+                f"Vault {vault_id} has already been settled for {user_address}"
             )
     for vault_id in vault_ids_list:
         result = client.settle_vault(int(vault_id))
@@ -166,27 +201,41 @@ def settle(vault_ids):
             logger.error(f"Failed to settle vault {vault_id}.")
 
 
+# we pass a list of markets to redeem
 @positions.command("redeem")
-def redeem():
+@click.option(
+    "--markets",
+    "-m",
+    required=True,
+    type=click.STRING,
+    help="Comma separated list of markets to redeem. For example: ETH-02JUN23-1900-P, ETH-02JUN23-2000-P",
+)
+@click.pass_context
+def redeem(ctx, markets):
     """Redeem a position."""
-    client = RyskClient(logger=logger)
-    assert client.web3_client.web3.is_connected()
-    raise NotImplementedError
+    logger = ctx.obj["logger"]
+    client = ctx.obj["client"]
+    markets_list = markets.split(",")
+    user_address = client._crypto.address  # pylint: disable=protected-access
+    logger.info(f"Redeeming {markets} for {user_address}")
+    for market in markets_list:
+        result = client.redeem_market(market)
+        if result:
+            logger.info(f"Successfully redeemed {market}. Transaction: {result}")
+        else:
+            logger.error(f"Failed to redeem {market}.")
+            raise ValueError(f"Failed to redeem {market}.")
 
 
 @positions.command("collateralize")
 def collateralize():
     """Collateralize a position."""
-    client = RyskClient(logger=logger)
-    assert client.web3_client.web3.is_connected()
     raise NotImplementedError
 
 
 @trades.command("list")
 def list_trades():
     """List trades."""
-    client = RyskClient(logger=logger)
-    assert client.web3_client.web3.is_connected()
     raise NotImplementedError  # disable=raising-to-general-error
 
 
@@ -197,16 +246,11 @@ def list_trades():
     "--amount", "-a", required=True, type=click.FLOAT, help="Size of the trade."
 )
 @click.option("--retries", "-r", default=3, type=click.INT, help="Number of retries.")
-def create_trade(market, side, amount, retries):
+@click.pass_context
+def create_trade(ctx, market, side, amount, retries):
     """Create a trade."""
-    auth = {
-        "address": os.environ["ETH_ADDRESS"],
-        "private_key": os.environ["ETH_PRIVATE_KEY"],
-        "logger": logger,
-    }
-
-    logger.info(f"Creating trade for {auth['address']} on {market} for {amount} {side}")
-    client = RyskClient(**auth)
+    client = ctx.obj["client"]
+    logger = ctx.obj["logger"]
     while retries:
         try:
             trade = client.create_order(market, amount, side)
@@ -217,26 +261,6 @@ def create_trade(market, side, amount, retries):
 
             logger.error(f"failed to created {retries - 1} attempts remaining")
             retries -= 1
-
-
-@balances.command("fetch")
-def fetch_balances():
-    """Fetch balances."""
-    auth = {
-        "address": os.environ["ETH_ADDRESS"],
-        "logger": logger,
-    }
-    client = RyskClient(**auth)
-
-    columns = [
-        "symbol",
-        "balance",
-    ]
-    current_balances = [
-        {"symbol": k, "balance": v} for k, v in client.fetch_balances().items()
-    ]
-
-    render_table("Balances", current_balances, columns)
 
 
 if __name__ == "__main__":

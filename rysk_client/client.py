@@ -609,3 +609,11 @@ class RyskClient:  # noqa: R0902
         self._logger.info(f"Redeeming otoken {otoken_id}...")
         txn = self.web3_client.redeem_otoken(otoken_id=otoken_id, amount=amount)
         return self.web3_client.sign_and_sumbit(txn, self._crypto.private_key)
+
+    def redeem_market(self, market: str):
+        """Redeem otoken."""
+        self._logger.info(f"Redeeming market {market}...")
+        rysk_option_market = RyskOptionMarket.from_str(market)
+        otoken_address = self.web3_client.get_otoken(rysk_option_market.to_series())
+        amount = self.web3_client.get_otoken_balance(otoken_address) / 10**8
+        return self.redeem_otoken(otoken_address, amount)

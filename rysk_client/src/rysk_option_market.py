@@ -227,7 +227,9 @@ class RyskOptionMarket:
         _name = name.split("-")
         _expiration = int(
             datetime.strptime(
-                f"{_name[1]}T{EXPIRATION_TIME}", "%d%b%yT%H:%M:%S"
+                # we need to add the UTC timezone to the string to parse it correctly
+                f"{_name[1]}T{EXPIRATION_TIME}UTC",
+                "%d%b%yT%H:%M:%S%Z",
             ).timestamp()
         )
 
