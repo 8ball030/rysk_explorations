@@ -28,6 +28,8 @@ def set_client(ctx):
             "logger": ctx.logger,
         }
         ctx.client = RyskClient(**auth)
+        if not ctx.client.web3_client.web3.is_connected():
+            raise ConnectionError("Web3 client not connected.")
     return ctx.client
 
 
@@ -199,11 +201,30 @@ def settle(ctx, vault_ids):
             logger.error(f"Failed to settle vault {vault_id}.")
 
 
+# we pass a list of markets to redeem
 @positions.command("redeem")
+@click.option(
+    "--markets",
+    "-m",
+    required=True,
+    type=click.STRING,
+    help="Comma separated list of markets to redeem. For example: ETH-02JUN23-1900-P, ETH-02JUN23-2000-P",
+)
 @click.pass_context
-def redeem(ctx):
+def redeem(ctx, markets):
     """Redeem a position."""
-    raise NotImplementedError
+    logger = ctx.obj["logger"]
+    client = ctx.obj["client"]
+    markets_list = markets.split(",")
+    user_address = client._crypto.address  # pylint: disable=protected-access
+    logger.info(f"Redeeming {markets} for {user_address}")
+    for market in markets_list:
+        result = client.redeem_market(market)
+        if result:
+            logger.info(f"Successfully redeemed {market}. Transaction: {result}")
+        else:
+            logger.error(f"Failed to redeem {market}.")
+            raise ValueError(f"Failed to redeem {market}.")
 
 
 @positions.command("collateralize")
