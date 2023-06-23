@@ -127,3 +127,13 @@ def test_retieve_and_redeem(market, amount, client):
     otoken_address = client.web3_client.get_otoken(rysk_option_market.to_series())
     result = client.redeem_otoken(otoken_address, amount)
     assert result, "Transaction failed."
+
+
+@pytest.mark.parametrize(
+    "market",
+    ["ETH-02JUN23-1900-P"],
+)
+def test_redeem_market_from_str(market, client):
+    """Test that the otoken can be used to retrieve and redeem."""
+    result = client.redeem_market(market)
+    assert result, "Transaction failed."
