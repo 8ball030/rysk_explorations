@@ -159,11 +159,21 @@ def watch(ctx):
 
 @positions.command("close")
 @click.pass_context
-def close(ctx):
+@click.option("--market", "-m", required=True, help="Market to close.")
+@click.option("--size", "-s", required=False, help="Size to close. Default is All.", default=None, type=click.FLOAT)
+def close(ctx, market, size):
     """Close a position."""
-    client = ctx.obj["client"]
-    assert client.web3_client.web3.is_connected()
-    raise NotImplementedError
+    client: RyskClient = ctx.obj["client"]
+    logger = ctx.obj["logger"]
+    user_address = client._crypto.address  # pylint: disable=protected-access
+    positions = client.fetch_positions()
+    if market not in (f['symbol']for f in positions):
+        raise ValueError(f"User {user_address} does not have an open position in {market}")
+    positions = [p for p in positions if p['symbol'] == market]
+    position = positions[0]
+    logger.info(f"Closing position for {user_address}")
+    txn = client.close_long(market)
+
 
 
 @positions.command("settle")

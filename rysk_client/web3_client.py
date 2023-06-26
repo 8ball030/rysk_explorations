@@ -14,8 +14,10 @@ from rysk_client.src.action_type import ActionType
 from rysk_client.src.collateral import Collateral
 from rysk_client.src.constants import NULL_ADDRESS, NULL_DATA, RPC_URL, WSS_URL
 from rysk_client.src.crypto import EthCrypto
+from rysk_client.src.operation_factory import close_long
 from rysk_client.src.order import Order
 from rysk_client.src.order_side import OrderSide
+from rysk_client.src.rysk_option_market import RyskOptionMarket
 from rysk_client.src.utils import get_contract, get_logger, get_web3
 
 
@@ -69,7 +71,13 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
         self._processed_tx: deque = deque(maxlen=100)
         self._crypto = crypto
 
-        self.otoken = get_contract("otoken", self.web3)
+
+    def get_otoken_contract(self, otoken_address: str) -> Contract:
+        """
+        Get the otoken contract.
+        """
+        return get_contract("otoken", self.web3, otoken_address)
+
 
     def get_options_prices(
         self,
@@ -342,3 +350,34 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
         """
         otoken = get_contract("otoken", self.web3, otoken_id)
         return otoken.functions.balanceOf(self._crypto.address).call()  # type: ignore
+
+
+    def close_long(self,
+                   acceptable_premium: int,
+                   market_name: str,
+                   amount: int,
+                   otoken_address: str,
+                   ):
+        """
+        Build the transaction to close a long position.
+        """
+        rysk_option_market = RyskOptionMarket.from_str(market_name)
+        self._logger.info(
+            f"Closing {amount} of {rysk_option_market.name}"
+        )
+        _amount = int(amount * 1e8)
+        operate_tuple = close_long(
+            acceptable_premium=acceptable_premium,
+            owner_address=self._crypto.address,  # type: ignore
+            otoken_address=otoken_address,
+            amount=_amount,
+        )
+        from rich import print_json
+        print_json(data=operate_tuple)
+        return self.option_exchange.functions.operate(operate_tuple).build_transaction(
+            {
+                "from": self._crypto.address,  # type: ignore
+                "nonce": self.web3.eth.get_transaction_count(self._crypto.address),  # type: ignore
+            }
+        )
+

@@ -4,17 +4,6 @@ Test the rysk client.
 
 import pytest
 
-from rysk_client.client import RyskClient
-
-
-@pytest.fixture
-def client(default_address):
-    """Get the rysk client."""
-    crypto = {
-        "address": default_address,
-    }
-    return RyskClient(**crypto)
-
 
 def test_fetch_markets(client):
     """Test fetching markets."""

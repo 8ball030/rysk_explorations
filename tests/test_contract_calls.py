@@ -155,3 +155,41 @@ def test_client_can_buy(client, market, amount):
     """
     txn = client.buy_option(market, amount)
     assert txn, "Transaction failed."
+
+@pytest.mark.parametrize(
+    "market,amount",
+    [
+        ("ETH-30JUN23-1900-P", 5),
+    ]
+)
+def test_client_can_close_long(client, market, amount):
+    """Test that the otoken can be used to retrieve and redeem.
+    flow:
+    buy_option -> approve -> close_long
+    example txs:
+    buy: 0x3200b84acc909d0d9b19f0832a5529f42eaf2bda8330eb5a757c15d02dc69fe4
+    approve: 0xdf9cee491c8c3e45f5db1c4d47c1774a363687df3ce90c4adbc5e5acde178322
+    close: 
+    """
+    txn = client.buy_option(market, amount)
+    assert txn, "Transaction failed."
+
+    txn = client.close_long(market)
+    assert txn, "Transaction failed."
+
+@pytest.mark.parametrize(
+    "market,amount",
+    [
+        ("ETH-30JUN23-1800-P", 1),
+        ("ETH-30JUN23-1800-P", 5),
+        ("ETH-30JUN23-1800-P", 10),
+        ("ETH-30JUN23-1800-P", 20),
+    ],
+)
+def test_client_can_buy_differing_amounts(client, market, amount):
+    """Test that the otoken can be used to retrieve and redeem.
+    example tx: 0x3200b84acc909d0d9b19f0832a5529f42eaf2bda8330eb5a757c15d02dc69fe4
+    market
+    """
+    txn = client.buy_option(market, amount)
+    assert txn, "Transaction failed."

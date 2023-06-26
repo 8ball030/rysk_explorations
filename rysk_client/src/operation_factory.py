@@ -7,7 +7,7 @@ from enum import Enum
 
 from rysk_client.src.action_type import RyskActionType
 from rysk_client.src.collateral import Collateral
-from rysk_client.src.constants import NULL_ADDRESS
+from rysk_client.src.constants import NULL_ADDRESS, NULL_DATA
 from rysk_client.src.rysk_option_market import RyskOptionMarket
 
 
@@ -58,3 +58,35 @@ def buy(
         "operation": OperationType.RYSK_ACTION.value,
         "operationQueue": operations,
     }
+
+EMPTY_SERIES = {
+        "expiration": 1,
+        "strike": 1,
+        "isPut": True,
+        "collateral": NULL_ADDRESS,
+        "underlying": NULL_ADDRESS,
+        "strikeAsset": NULL_ADDRESS,
+    }
+
+def close_long(
+    acceptable_premium: int,
+    owner_address: str,
+    otoken_address: str,
+    amount: int,
+):
+    """Create the operation to buy an option."""
+    return [{
+        "operation": OperationType.RYSK_ACTION.value,
+        "operationQueue": [
+            {
+                "actionType": RyskActionType.CLOSE_OPTION.value,
+                "owner": NULL_ADDRESS,
+                "secondAddress": owner_address,
+                "asset": otoken_address,
+                "vaultId": 0,
+                "amount": amount,
+                "optionSeries": EMPTY_SERIES,
+                "indexOrAcceptablePremium": acceptable_premium,
+                "data": NULL_DATA,
+    }]
+    }]

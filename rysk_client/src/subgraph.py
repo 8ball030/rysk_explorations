@@ -133,8 +133,11 @@ class SubgraphClient:
             data=json.dumps(subgraph_query),
             timeout=DEFAULT_TIMEOUT,
         )
-        data = json.loads(response.content)["data"]
-        return data
+        if response.status_code != 200 or response.content == b'404':
+            raise ValueError(
+                f"Subgraph query failed with status code {response.status_code}."
+            )
+        return json.loads(response.content)["data"]
 
     def query_markets(self):
         """Query the subgraph for markets."""

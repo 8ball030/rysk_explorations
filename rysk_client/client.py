@@ -322,14 +322,6 @@ class RyskClient:  # noqa: R0902
         # we format 2 decimal places
         self._logger.info(f"Acceptable premium: ${acceptable_premium:.2f}")
 
-        user_vaults = self.web3_client.fetch_user_vaults(
-            self._crypto.address
-        )  # pylint: disable=E1120
-
-        if not user_vaults:
-            self._logger.info("No vaults found. Creating one.")
-            raise NotImplementedError("No vaults found. Creating one.")
-        # do we need to use an alternative aorder of operations?
         operate_tuple = buy(
             int(acceptable_premium * 1e8),
             owner_address=self._crypto.address,  # pylint: disable=E1120
@@ -338,7 +330,9 @@ class RyskClient:  # noqa: R0902
         )
 
         # buy tx
-        self._logger.debug(f"Passing:\n{operate_tuple}")
+        if self._logger.level == logging.DEBUG:
+            self._logger.debug(f"Passing:")
+            print_json(data=operate_tuple)
 
         try:
             txn = self.web3_client.option_exchange.functions.operate(
@@ -562,3 +556,39 @@ class RyskClient:  # noqa: R0902
         otoken_address = self.web3_client.get_otoken(rysk_option_market.to_series())
         amount = self.web3_client.get_otoken_balance(otoken_address) / 10**8
         return self.redeem_otoken(otoken_address, amount)
+
+    def close_long(self, market: str):
+        """Close long."""
+        self._logger.info(f"Closing long {market}...")
+        rysk_option_market = RyskOptionMarket.from_str(market)
+        otoken_address = self.web3_client.get_otoken(rysk_option_market.to_series())
+        _amount = self.web3_client.get_otoken_balance(otoken_address) / 10**8
+        markets = [f for f in self.fetch_markets() if f['id'] == market]
+        if len(markets) == 0:
+            raise ValueError(f"Market {market} not found")
+        _market = markets[0]
+        acceptable_premium = int(_market['ask'] * (1 - ALLOWED_SLIPPAGE) * 10**8)
+
+        # we check the approval
+        otoken_contract = self.web3_client.get_otoken_contract(otoken_address)
+
+        if not self.web3_client.is_approved(otoken_contract, self.web3_client.option_exchange.address,
+                                            self._crypto.address,
+                                            int(10**8 * _amount)
+                                            ):
+            self._logger.info(f"Approving {market}...")
+            txn = self.web3_client.create_approval(otoken_contract, self.web3_client.option_exchange.address, 
+                                           self._crypto.address,  # type: ignore
+                                             int(10**8 * _amount))
+            self.web3_client.sign_and_sumbit(txn, self._crypto.private_key)
+
+        if _amount == 0:
+            raise ValueError(f"Nothing to close for {market}...")
+
+        txn = self.web3_client.close_long(
+            acceptable_premium=acceptable_premium,
+            market_name=market,
+            amount=_amount,
+            otoken_address=self.web3_client.web3.to_checksum_address(otoken_address), 
+            )
+        return self.web3_client.sign_and_sumbit(txn, self._crypto.private_key)
