@@ -2,6 +2,7 @@
 Simple client for the rysk contracts implemented in python.
 """
 import logging
+import time
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict, List, Optional
@@ -25,7 +26,7 @@ from rysk_client.web3_client import Web3Client
 PRICE_DEVISOR = 1_000_000_000_000_000_000
 EXPOSURE_DEVISOR = 1_000_000_000_000_000_000
 
-ALLOWED_SLIPPAGE = 0.1
+ALLOWED_SLIPPAGE = 0.15
 
 
 class ApprovalException(Exception):
@@ -78,6 +79,7 @@ class RyskClient:  # noqa: R0902
     _markets: List[RyskOptionMarket]
     _tickers: List[Dict[str, Any]]
     _otokens: Dict[str, Dict[str, Any]]
+    web3_client: Web3Client
 
     def __init__(
         self,
@@ -85,6 +87,7 @@ class RyskClient:  # noqa: R0902
         private_key: Optional[str] = None,
         logger=None,
         rpc_url: str = RPC_URL,
+        verbose: bool = True,
     ):
         self._markets: List[RyskOptionMarket] = []
         self._tickers = []
@@ -96,11 +99,13 @@ class RyskClient:  # noqa: R0902
             self._logger,
             self._crypto,
             rpc_url=rpc_url,
+            verbose=verbose,
         )
         self.subgraph_client = SubgraphClient()
         self._logger.info(
             f"Rysk client initialized and connected to the blockchain at {self.web3_client.web3.provider}"
         )
+        self._verbose = verbose
 
     def fetch_markets(self) -> List[Dict[str, Any]]:
         """
@@ -156,7 +161,6 @@ class RyskClient:  # noqa: R0902
 
         longs = self.subgraph_client.query_longs(address=self._crypto.address)
         shorts = self.subgraph_client.query_shorts(address=self._crypto.address)
-        # use the lens
 
         parsed_short = [self._parse_position(pos, PositionSide.SHORT) for pos in shorts]
         parsed_longs = [self._parse_position(pos, PositionSide.LONG) for pos in longs]
@@ -242,23 +246,46 @@ class RyskClient:  # noqa: R0902
         else:
             transaction = self.sell_option(symbol, amount)
         # we can now submit it to the chain;
-        transaction["nonce"] = self.web3_client.web3.eth.get_transaction_count(
-            self._crypto.address
-        )
-        submitted = self.web3_client.sign_and_sumbit(
-            transaction, self._crypto.private_key
-        )
-        if submitted:
-            self._logger.info(f"Order for {amount} {symbol} Successfully created!")
-            self._logger.info(f"Transaction hash: {submitted}")
-        else:
-            self._logger.error(f"Order for {amount} {symbol} failed to create!")
-            raise ValueError("Order failed to create.")
+        # we can also confirm the otoken balance
+        market = self.get_market(symbol)
+        otoken_address = self.web3_client.get_otoken(market.to_series())
+
+        old_balance = self.web3_client.get_otoken_balance(otoken_address)
+
+        self._logger.info(f"Otken balance: {old_balance}")
+        block_number = self.web3_client.web3.eth.block_number
+        submitted = self._sign_and_sumbit(transaction)
+        # block until the transaction is mined
+        wait = 10
+        while self.web3_client.web3.eth.block_number <= block_number:
+            time.sleep(1)
+            wait -= 1
+            if wait == 0:
+                raise TimeoutError("Transaction was not mined in time.")
+
+        self._logger.info(f"Submitted transaction with hash: {submitted}")
+        new_balance = self.web3_client.get_otoken_balance(otoken_address)
+        self._logger.info(f"Otken balance: {new_balance}")
+        if new_balance == old_balance:
+            raise ValueError("Transaction failed to execute.")
+
         return {
             "id": submitted,
             "symbol": symbol,
             "datetime": datetime.now(),
         }
+
+    def get_market(self, symbol: str) -> RyskOptionMarket:
+        """
+        Returns the market information.
+        """
+        if not self._markets:
+            self.fetch_markets()
+
+        for market in self._markets:
+            if market.name == symbol:
+                return market
+        raise ValueError(f"Could not find market {symbol}.")
 
     def buy_option(  # noqa: R0914
         self,
@@ -278,13 +305,15 @@ class RyskClient:  # noqa: R0902
             raise ValueError(
                 f"Collateral asset {collateral_asset} is not supported by the protocol."
             )
-        collateral_contract = get_contract(collateral_asset, self.web3_client.web3)
+        collateral_asset_name = f"settlement_{collateral_asset}"
+        collateral_contract = get_contract(collateral_asset_name, self.web3_client.web3)
         collateral_approved = self.web3_client.is_approved(
             collateral_contract,
             self.web3_client.option_exchange.address,
             str(self._crypto.address),
             int(amount * 1e18),
         )
+        self._logger.info(f"Collateral approved: {collateral_approved}.")
 
         if not collateral_approved:
             self._logger.info(
@@ -310,7 +339,16 @@ class RyskClient:  # noqa: R0902
             self.fetch_tickers()  # type: ignore
 
         self._logger.info(f"Fetching acceptable premium for {market}")
-        rysk_option_market: RyskOptionMarket = [f for f in self._markets if f.name == market][0]  # type: ignore
+        rysk_option_market = self.get_market(market)
+
+        otoken_address = self.web3_client.get_otoken(rysk_option_market.to_series())
+
+        balance = self.web3_client.get_otoken_balance(otoken_address)
+        self._logger.info(f"Balance of {otoken_address}: {balance}")
+
+        self._logger.info(
+            f"Fetching market data for {market}. Otoken address: {otoken_address}"
+        )
         _amount = amount * 1000000000000000000
         acceptable_premium = self.web3_client.get_options_prices(  # type: ignore
             rysk_option_market.to_series(),
@@ -329,9 +367,7 @@ class RyskClient:  # noqa: R0902
             option_market=rysk_option_market,
         )
 
-        # buy tx
-        if self._logger.level == logging.DEBUG:
-            self._logger.debug(f"Passing:")
+        if self._verbose:
             print_json(data=operate_tuple)
 
         try:
@@ -363,11 +399,7 @@ class RyskClient:  # noqa: R0902
             self.fetch_tickers()
         _amount = amount * 1e18
 
-        rysk_option_market: RyskOptionMarket = [
-            f for f in self._markets if f.name == market
-        ][
-            0
-        ]  # type: ignore
+        rysk_option_market = self.get_market(market)
 
         acceptable_premium = self.web3_client.get_options_prices(
             rysk_option_market.to_series(),
@@ -541,13 +573,13 @@ class RyskClient:  # noqa: R0902
         """Settle options."""
         self._logger.info(f"Settling vault {vault_id}...")
         txn = self.web3_client.settle_vault(vault_id=vault_id)
-        return self.web3_client.sign_and_sumbit(txn, self._crypto.private_key)
+        return self._sign_and_sumbit(txn, self._crypto.private_key)
 
     def redeem_otoken(self, otoken_id: str, amount: int):
         """Redeem otoken."""
         self._logger.info(f"Redeeming otoken {otoken_id}...")
         txn = self.web3_client.redeem_otoken(otoken_id=otoken_id, amount=amount)
-        return self.web3_client.sign_and_sumbit(txn, self._crypto.private_key)
+        return self._sign_and_sumbit(txn, self._crypto.private_key)
 
     def redeem_market(self, market: str):
         """Redeem otoken."""
@@ -557,30 +589,53 @@ class RyskClient:  # noqa: R0902
         amount = self.web3_client.get_otoken_balance(otoken_address) / 10**8
         return self.redeem_otoken(otoken_address, amount)
 
-    def close_long(self, market: str):
+    @property
+    def active_markets(self):
+        """Get active markets."""
+        if not self._markets:
+            self.fetch_markets()
+        return {market.name: market for market in self._markets}
+
+    def close_long(self, market: str, size: float):
         """Close long."""
         self._logger.info(f"Closing long {market}...")
         rysk_option_market = RyskOptionMarket.from_str(market)
         otoken_address = self.web3_client.get_otoken(rysk_option_market.to_series())
-        _amount = self.web3_client.get_otoken_balance(otoken_address) / 10**8
-        markets = [f for f in self.fetch_markets() if f['id'] == market]
-        if len(markets) == 0:
-            raise ValueError(f"Market {market} not found")
-        _market = markets[0]
-        acceptable_premium = int(_market['ask'] * (1 - ALLOWED_SLIPPAGE) * 10**8)
-
+        if size is None:
+            _amount = self.web3_client.get_otoken_balance(otoken_address) / 10**8
+        else:
+            _amount = size * 1e18
+        _market = self.get_market(market)
+        if _market.name not in self.active_markets:
+            raise ValueError(f"{market} is not an active market...")
+        acceptable_premium = int(_market.ask * (1 - ALLOWED_SLIPPAGE))
         # we check the approval
         otoken_contract = self.web3_client.get_otoken_contract(otoken_address)
 
-        if not self.web3_client.is_approved(otoken_contract, self.web3_client.option_exchange.address,
-                                            self._crypto.address,
-                                            int(10**8 * _amount)
-                                            ):
+        # we get the balance
+        balance = self.web3_client.get_otoken_balance(otoken_address)
+
+        self._logger.info(f"Balance for {market} is {balance / 10**8}")
+
+        if balance == 0:
+            raise ValueError(f"Nothing to close for {market}...")
+
+        if not self.web3_client.is_approved(
+            otoken_contract,
+            self.web3_client.option_exchange.address,
+            self._crypto.address,
+            int(10**8 * _amount),
+        ):
             self._logger.info(f"Approving {market}...")
-            txn = self.web3_client.create_approval(otoken_contract, self.web3_client.option_exchange.address, 
-                                           self._crypto.address,  # type: ignore
-                                             int(10**8 * _amount))
-            self.web3_client.sign_and_sumbit(txn, self._crypto.private_key)
+            txn = self.web3_client.create_approval(
+                otoken_contract,
+                self.web3_client.option_exchange.address,
+                self._crypto.address,  # type: ignore
+                int(10**8 * _amount),
+            )
+            self._sign_and_sumbit(
+                txn,
+            )
 
         if _amount == 0:
             raise ValueError(f"Nothing to close for {market}...")
@@ -589,6 +644,35 @@ class RyskClient:  # noqa: R0902
             acceptable_premium=acceptable_premium,
             market_name=market,
             amount=_amount,
-            otoken_address=self.web3_client.web3.to_checksum_address(otoken_address), 
+            otoken_address=self.web3_client.web3.to_checksum_address(otoken_address),
+        )
+        return self._sign_and_sumbit(txn)
+
+    def _sign_and_sumbit(self, txn, retries=3, backoff=0.5):
+        """
+        Sign and submit transaction.
+
+        retries: number of retries
+        backoff: backoff in seconds
+
+        """
+        try:
+            txn["nonce"] = self.web3_client.web3.eth.get_transaction_count(
+                self._crypto.address
             )
-        return self.web3_client.sign_and_sumbit(txn, self._crypto.private_key)
+            result = self.web3_client.sign_and_sumbit(txn, self._crypto.private_key)
+            if result is not False:
+                self._logger.info(f"Transaction {result} submitted.")
+                return result
+            raise ValueError("Transaction Failed!")
+
+        except ValueError as error:
+            if retries > 0:
+                self._logger.warning(
+                    f"Error {error} while submitting transaction. Retrying..."
+                )
+                time.sleep(backoff)
+                return self._sign_and_sumbit(
+                    txn, retries=retries - 1, backoff=backoff * 2
+                )
+            raise error

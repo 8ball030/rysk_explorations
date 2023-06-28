@@ -133,7 +133,7 @@ class SubgraphClient:
             data=json.dumps(subgraph_query),
             timeout=DEFAULT_TIMEOUT,
         )
-        if response.status_code != 200 or response.content == b'404':
+        if response.status_code != 200 or response.content == b"404":
             raise ValueError(
                 f"Subgraph query failed with status code {response.status_code}."
             )

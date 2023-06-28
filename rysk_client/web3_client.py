@@ -8,6 +8,8 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 
 import websocket
+from rich import print_json
+from web3 import HTTPProvider
 from web3.contract import Contract
 
 from rysk_client.src.action_type import ActionType
@@ -48,11 +50,12 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
         logger: Optional[logging.Logger] = None,
         crypto: Optional[EthCrypto] = None,
         rpc_url: str = RPC_URL,
+        verbose: bool = True,
     ):
         """
         Initialize the client with the web3 provider.
         """
-        self.web3 = get_web3(rpc_url)
+        self.web3: HTTPProvider = get_web3(rpc_url)
         self.beyond_pricer = get_contract("beyond_pricer", self.web3)
         self.opyn_controller = get_contract("opyn_controller", self.web3)
         self.option_exchange = get_contract("option_exchange", self.web3)
@@ -70,14 +73,13 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
         self._logger = logger or get_logger()
         self._processed_tx: deque = deque(maxlen=100)
         self._crypto = crypto
-
+        self._verbose = verbose
 
     def get_otoken_contract(self, otoken_address: str) -> Contract:
         """
         Get the otoken contract.
         """
         return get_contract("otoken", self.web3, otoken_address)
-
 
     def get_options_prices(
         self,
@@ -240,7 +242,8 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
         """
         Check if the spender is approved to spend the owner's tokens.
         """
-        return contract.functions.allowance(owner, spender).call() >= amount
+        allowance = contract.functions.allowance(owner, spender).call()
+        return allowance >= amount
 
     def create_approval(
         self, contract: Contract, spender: str, owner: str, amount: int
@@ -252,11 +255,23 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
             spender, int(amount)
         ).build_transaction(
             {
-                "from": owner,
-                "nonce": self.web3.eth.get_transaction_count(owner),
+                **{
+                    "from": owner,
+                    "nonce": self.web3.eth.get_transaction_count(owner),
+                },
+                **self._default_tx_params,
             }
         )
         return transaction
+
+    @property
+    def _default_tx_params(self) -> dict:
+        """
+        Default transaction parameters.
+        """
+        return {
+            "gasPrice": self.web3.eth.gas_price,
+        }
 
     def fetch_user_vaults(self, address: str) -> List[Dict[str, Any]]:  # noqa: W0613
         """
@@ -308,8 +323,11 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
         ]
         return self.opyn_controller.functions.operate(operate_tuple).build_transaction(
             {
-                "from": self._crypto.address,  # type: ignore
-                "nonce": self.web3.eth.get_transaction_count(self._crypto.address),  # type: ignore
+                **{
+                    "from": self._crypto.address,  # type: ignore
+                    "nonce": self.web3.eth.get_transaction_count(self._crypto.address),  # type: ignore
+                },
+                **self._default_tx_params,
             }
         )
 
@@ -339,8 +357,11 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
         ]
         return self.opyn_controller.functions.operate(operate_tuple).build_transaction(
             {
-                "from": self._crypto.address,  # type: ignore
-                "nonce": self.web3.eth.get_transaction_count(self._crypto.address),  # type: ignore
+                **{
+                    "from": self._crypto.address,  # type: ignore
+                    "nonce": self.web3.eth.get_transaction_count(self._crypto.address),  # type: ignore
+                },
+                **self._default_tx_params,
             }
         )
 
@@ -351,33 +372,32 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
         otoken = get_contract("otoken", self.web3, otoken_id)
         return otoken.functions.balanceOf(self._crypto.address).call()  # type: ignore
 
-
-    def close_long(self,
-                   acceptable_premium: int,
-                   market_name: str,
-                   amount: int,
-                   otoken_address: str,
-                   ):
+    def close_long(
+        self,
+        acceptable_premium: int,
+        market_name: str,
+        amount: int,
+        otoken_address: str,
+    ):
         """
         Build the transaction to close a long position.
         """
         rysk_option_market = RyskOptionMarket.from_str(market_name)
-        self._logger.info(
-            f"Closing {amount} of {rysk_option_market.name}"
-        )
-        _amount = int(amount * 1e8)
+        self._logger.info(f"Closing {amount} of {rysk_option_market.name}")
         operate_tuple = close_long(
             acceptable_premium=acceptable_premium,
             owner_address=self._crypto.address,  # type: ignore
             otoken_address=otoken_address,
-            amount=_amount,
+            amount=int(amount),
         )
-        from rich import print_json
-        print_json(data=operate_tuple)
+        if self._verbose:
+            print_json(data=operate_tuple)
         return self.option_exchange.functions.operate(operate_tuple).build_transaction(
             {
-                "from": self._crypto.address,  # type: ignore
-                "nonce": self.web3.eth.get_transaction_count(self._crypto.address),  # type: ignore
+                **{
+                    "from": self._crypto.address,  # type: ignore
+                    "nonce": self.web3.eth.get_transaction_count(self._crypto.address),  # type: ignore
+                },
+                **self._default_tx_params,
             }
         )
-

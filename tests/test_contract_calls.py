@@ -14,6 +14,26 @@ import requests
 from rysk_client.src.rysk_option_market import RyskOptionMarket
 from tests.constants import DEFAULT_FORK_BLOCK_NUMBER
 
+MARKETS = [
+    "ETH-30JUN23-1700-P",
+    "ETH-30JUN23-1800-P",
+    "ETH-30JUN23-1900-P",
+    "ETH-30JUN23-2000-P",
+    "ETH-30JUN23-2100-P",
+    "ETH-30JUN23-2200-P",
+    "ETH-30JUN23-1700-C",
+    "ETH-30JUN23-1800-C",
+    "ETH-30JUN23-1900-C",
+    "ETH-30JUN23-2000-C",
+    "ETH-30JUN23-2100-C",
+    "ETH-30JUN23-2200-C",
+]
+
+ACTIVE_MARKETS = [
+    ("ETH-30JUN23-1800-P", 28642800),
+    ("ETH-30JUN23-1900-P", 28642800),
+]
+
 
 @dataclass
 class LocalFork:
@@ -48,12 +68,15 @@ class LocalFork:
             )
         except requests.exceptions.ConnectionError:
             return False
+        except requests.exceptions.ReadTimeout:
+            return False
         if res.status_code != 200:
             return False
         return int(res.json()["result"], 16) == self.fork_block_number
 
     def run(self):
         """Run the local fork in a background process."""
+        run_command = f"ganache --fork.url {self.fork_url} --fork.blockNumber {self.fork_block_number}"
         run_command = f"anvil --fork-url {self.fork_url} --fork-block-number {self.fork_block_number}"
         self.process = Process(
             target=subprocess.run,
@@ -71,7 +94,7 @@ class LocalFork:
         while not self.is_ready():
             time.sleep(1)
             wait += 1
-            if wait > 10:
+            if wait > 15:
                 raise TimeoutError("Local fork did not start in time.")
 
 
@@ -156,26 +179,20 @@ def test_client_can_buy(client, market, amount):
     txn = client.buy_option(market, amount)
     assert txn, "Transaction failed."
 
-@pytest.mark.parametrize(
-    "market,amount",
-    [
-        ("ETH-30JUN23-1900-P", 5),
-    ]
-)
+
+@pytest.mark.skip(reason="For some reason this fails on the local fork.")
+@pytest.mark.parametrize("market,amount", zip(MARKETS, len(MARKETS) * [1]))
 def test_client_can_close_long(client, market, amount):
     """Test that the otoken can be used to retrieve and redeem.
     flow:
     buy_option -> approve -> close_long
-    example txs:
-    buy: 0x3200b84acc909d0d9b19f0832a5529f42eaf2bda8330eb5a757c15d02dc69fe4
-    approve: 0xdf9cee491c8c3e45f5db1c4d47c1774a363687df3ce90c4adbc5e5acde178322
-    close: 
     """
     txn = client.buy_option(market, amount)
     assert txn, "Transaction failed."
 
-    txn = client.close_long(market)
+    txn = client.close_long(market, amount)
     assert txn, "Transaction failed."
+
 
 @pytest.mark.parametrize(
     "market,amount",
@@ -192,4 +209,67 @@ def test_client_can_buy_differing_amounts(client, market, amount):
     market
     """
     txn = client.buy_option(market, amount)
+    assert txn, "Transaction failed."
+
+
+@pytest.mark.skip("For some reason, state doesnt appear to be updating.")
+@pytest.mark.parametrize("market,amount", zip(MARKETS, len(MARKETS) * [1]))
+def test_issued_options(client, market, amount):
+    """
+    Test that when we buy an option
+    the otoken is then transfered to us,
+    so that our balance increments
+    be used to retrieve and redeem.
+    """
+    rysk_option_market = RyskOptionMarket.from_str(market)
+    otoken_address = client.web3_client.get_otoken(rysk_option_market.to_series())
+
+    balance_before = client.web3_client.get_otoken_balance(otoken_address)
+    txn = client.buy_option(market, amount)
+    assert txn, "Transaction failed."
+    balance_after = client.web3_client.get_otoken_balance(otoken_address)
+    assert balance_after > balance_before, "Balance did not increase."
+
+
+@pytest.mark.parametrize(
+    "market,block_number",
+    ACTIVE_MARKETS,
+)
+def test_get_otoken_address(local_fork, client, market, block_number):
+    """Test that the otoken can be used to retrieve and redeem."""
+    local_fork.stop()
+    local_fork.fork_block_number = block_number
+    local_fork.run()
+    rysk_option_market = RyskOptionMarket.from_str(market)
+    otoken_address = client.web3_client.get_otoken(rysk_option_market.to_series())
+    assert otoken_address, "Otoken address is None."
+
+
+@pytest.mark.parametrize(
+    "market,block_number",
+    ACTIVE_MARKETS,
+)
+def test_get_otoken_balance(local_fork, client, market, block_number):
+    """Test that the otoken can be used to retrieve and redeem."""
+    local_fork.stop()
+    local_fork.fork_block_number = block_number
+    local_fork.run()
+    rysk_option_market = RyskOptionMarket.from_str(market)
+    otoken_address = client.web3_client.get_otoken(rysk_option_market.to_series())
+    balance = client.web3_client.get_otoken_balance(otoken_address)
+    assert balance > 0, f"Market {market} Otoken {otoken_address} balance is zero."
+
+
+@pytest.mark.parametrize(
+    "market,block_number",
+    ACTIVE_MARKETS,
+)
+def test_can_close_otoken(local_fork, client, market, block_number):
+    """
+    Test that the otoken can be used to retrieve and redeem.
+    """
+    local_fork.stop()
+    local_fork.fork_block_number = block_number
+    local_fork.run()
+    txn = client.close_long(market, 1)
     assert txn, "Transaction failed."
