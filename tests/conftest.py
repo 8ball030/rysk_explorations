@@ -1,6 +1,8 @@
 """
 Module for the conftest
 """
+import socket
+
 import pytest
 
 from rysk_client.client import RyskClient
@@ -31,7 +33,7 @@ def subgraph_client():
 @pytest.fixture
 def local_fork():
     """Use a local fork to test contract calls."""
-    fork = LocalFork(TESTNET_RPC_URL, DEFAULT_FORK_BLOCK_NUMBER)
+    fork = LocalFork(TESTNET_RPC_URL, DEFAULT_FORK_BLOCK_NUMBER, port=get_unused_port())
     fork.run()
     yield fork
     fork.stop()
@@ -44,9 +46,19 @@ def client(local_fork, default_address, default_private_key):
     crypto = {
         "address": default_address,
         "private_key": default_private_key,
+        "verbose": True,
     }
     client = RyskClient(**crypto)
     client.web3_client.web3.provider.endpoint_uri = (
         f"{local_fork.host}:{local_fork.port}"
     )
     return client
+
+
+def get_unused_port():
+    """Get an unused port."""
+    new_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    new_socket.bind(("localhost", 0))
+    port = new_socket.getsockname()[1]
+    new_socket.close()
+    return port

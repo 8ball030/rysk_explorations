@@ -51,7 +51,7 @@ jobs:
 
       - name: Tests
         run: |
-          poetry run adev test -p . -v
+          poetry run adev -v test -p .
 
       - name: Doc Tests
         run: |

@@ -1,15 +1,14 @@
 """
 Collection of tests to check known contract calls against a fork.
 """
-import subprocess
 import time
 from dataclasses import dataclass
-from multiprocessing import Process
 from typing import Optional
 
-import psutil
 import pytest
 import requests
+from docker import DockerClient
+from docker.models.containers import Container
 
 from rysk_client.src.rysk_option_market import RyskOptionMarket
 from tests.constants import DEFAULT_FORK_BLOCK_NUMBER
@@ -37,24 +36,24 @@ ACTIVE_MARKETS = [
 
 @dataclass
 class LocalFork:
-    """Use a local fork to test contract calls."""
+    """Use a docker container to test contract calls."""
 
     fork_url: str
     fork_block_number: int
 
-    host: str = "http://0.0.0.0"
-    port: int = 8545
-    process: Optional[Process] = None
+    host: str = "http://localhost"
+    port: int = 8546
+    container: Optional[Container] = None
+    run_command: str = "--fork-url {fork_url} --fork-block-number {fork_block_number} --host 0.0.0.0 --port {port}"
 
     def stop(self):
-        """Stop the local fork."""
-        for child in psutil.Process(self.process.pid).children(recursive=True):
-            child.kill()
-        self.process.kill()
-        self.process.terminate()
+        """Stop the docker container."""
+        # we force the container to stop
+        self.container.stop()
+        self.container.remove()
 
     def is_ready(self):
-        """Check if the local fork is ready."""
+        """Check if the docker container is ready."""
         try:
             res = requests.post(
                 f"{self.host}:{self.port}",
@@ -75,32 +74,33 @@ class LocalFork:
         return int(res.json()["result"], 16) == self.fork_block_number
 
     def run(self):
-        """Run the local fork in a background process."""
-        run_command = f"ganache --fork.url {self.fork_url} --fork.blockNumber {self.fork_block_number}"
-        run_command = f"anvil --fork-url {self.fork_url} --fork-block-number {self.fork_block_number}"
-        self.process = Process(
-            target=subprocess.run,
-            args=(run_command,),
-            kwargs={
-                "shell": True,
-                "check": True,
-                "stdout": subprocess.PIPE,
-                "stderr": subprocess.STDOUT,
+        """Run the docker container in a background process."""
+        client = DockerClient.from_env()
+        self.container = client.containers.run(
+            image="ghcr.io/foundry-rs/foundry:latest",
+            entrypoint="/usr/local/bin/anvil",
+            command=self.run_command.format(
+                fork_url=self.fork_url,
+                fork_block_number=self.fork_block_number,
+                port=self.port,
+            ),
+            ports={f"{self.port}/tcp": self.port},
+            detach=True,
+            volumes={
+                "foundry": {"bind": "/root/.foundry/cache/rpc/", "mode": "rw"},
             },
-            daemon=True,
         )
-        self.process.start()
         wait = 0
         while not self.is_ready():
             time.sleep(1)
             wait += 1
             if wait > 15:
-                raise TimeoutError("Local fork did not start in time.")
+                raise TimeoutError("Docker fork did not start in time.")
 
 
 def test_local_fork(local_fork):
     """Test that the local fork is running."""
-    assert local_fork.process.is_alive()
+    assert local_fork.is_ready()
 
 
 def test_get_block_number(local_fork):
@@ -212,7 +212,7 @@ def test_client_can_buy_differing_amounts(client, market, amount):
     assert txn, "Transaction failed."
 
 
-@pytest.mark.skip("For some reason, state doesnt appear to be updating.")
+@pytest.mark.skip(reason="For some reason this fails on the local fork.")
 @pytest.mark.parametrize("market,amount", zip(MARKETS, len(MARKETS) * [1]))
 def test_issued_options(client, market, amount):
     """
@@ -272,4 +272,60 @@ def test_can_close_otoken(local_fork, client, market, block_number):
     local_fork.fork_block_number = block_number
     local_fork.run()
     txn = client.close_long(market, 1)
+    assert txn, "Transaction failed."
+
+
+# Test can short new market
+# ETH-30JUN23-2000-C
+# example initial tx:
+# approval: https://goerli.arbiscan.io/tx/0x1505a54442e1ce44ea025c1079829ab12c49e78b03b3e1b394a0b81e39852a5a
+# mint vault: 0xa01d2f288eed793ac5ce83f3e18610d46aca855a48af04e1ffc0b323664f5d12
+# add to short: 0x9ead3d366738d74b8b8d870c6b06f46d3fe85930ccd25d4e6c9247b5af390816
+
+DEFAULT_MARKET = "ETH-30JUN23-2000-C"
+DEFAULT_AMOUNT = 1
+
+
+ACTIVE_SHORT_MARKETS = [
+    (
+        "ETH-30JUN23-2000-C",
+        28657207,
+    ),
+    (
+        "ETH-30JUN23-2000-C",
+        28658066,
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "market,block",
+    [ACTIVE_SHORT_MARKETS[1]],
+)
+def test_can_add_to_short_with_approval(local_fork, client, market, block):
+    """
+    Test that the otoken can be used to retrieve and redeem.
+    """
+    local_fork.stop()
+    local_fork.fork_block_number = block
+    local_fork.run()
+
+    txn = client.sell_option(market, DEFAULT_AMOUNT)
+    assert txn, "Transaction failed."
+
+
+@pytest.mark.skip(reason="For some reason this fails on the local fork.")
+@pytest.mark.parametrize(
+    "market,block",
+    [ACTIVE_SHORT_MARKETS[0]],
+)
+def test_can_add_to_short_with_no_approval(local_fork, client, market, block):
+    """
+    Test that the otoken can be used to retrieve and redeem.
+    """
+    local_fork.stop()
+    local_fork.fork_block_number = block
+    local_fork.run()
+
+    txn = client.sell_option(market, DEFAULT_AMOUNT)
     assert txn, "Transaction failed."

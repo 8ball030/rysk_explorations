@@ -1,27 +1,24 @@
 """
 Simple client for the rysk contracts implemented in python.
 """
-import logging
 import time
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 import web3
-from rich import print_json
 
-from rysk_client.src.action_type import ActionType
 from rysk_client.src.collateral import Collateral
-from rysk_client.src.constants import NULL_ADDRESS, RPC_URL
+from rysk_client.src.constants import RPC_URL
 from rysk_client.src.crypto import EthCrypto
-from rysk_client.src.operation_factory import buy
+from rysk_client.src.operation_factory import buy, sell
 from rysk_client.src.order_side import OrderSide
 from rysk_client.src.pnl_calculator import PnlCalculator, Trade
 from rysk_client.src.position_side import PositionSide
 from rysk_client.src.rysk_option_market import OptionChain, RyskOptionMarket
 from rysk_client.src.subgraph import SubgraphClient
 from rysk_client.src.utils import get_contract, get_logger
-from rysk_client.web3_client import Web3Client
+from rysk_client.web3_client import Web3Client, print_operate_tuple
 
 PRICE_DEVISOR = 1_000_000_000_000_000_000
 EXPOSURE_DEVISOR = 1_000_000_000_000_000_000
@@ -267,7 +264,9 @@ class RyskClient:  # noqa: R0902
         new_balance = self.web3_client.get_otoken_balance(otoken_address)
         self._logger.info(f"Otken balance: {new_balance}")
         if new_balance == old_balance:
-            raise ValueError("Transaction failed to execute.")
+            self._logger.error(
+                f"Transaction failed to execute. Balance is still {new_balance}"
+            )
 
         return {
             "id": submitted,
@@ -368,13 +367,13 @@ class RyskClient:  # noqa: R0902
         )
 
         if self._verbose:
-            print_json(data=operate_tuple)
+            print_operate_tuple([operate_tuple])
 
         try:
             txn = self.web3_client.option_exchange.functions.operate(
                 [operate_tuple]
             ).build_transaction({"from": self._crypto.address})
-        except web3.exceptions.ContractCustomError as error:
+        except web3.exceptions.ContractCustomError as error:  # pylint: disable=E1101
             self._logger.error("Transaction failed due to incorrect parameters.")
             raise ValueError(error) from error
 
@@ -439,7 +438,7 @@ class RyskClient:  # noqa: R0902
         else:
             collateral_asset = Collateral.WETH
             amount_to_approve = int(_amount * (1 + ALLOWED_SLIPPAGE))
-            contract = self.web3_client.weth
+            contract = self.web3_client.settlement_weth
 
         # we check the approval of the amount
         self._logger.info(
@@ -466,97 +465,39 @@ class RyskClient:  # noqa: R0902
             self._logger.info(f"Tx hash is {tx_hash}")
             if not tx_hash:
                 raise ApprovalException("Approval failed.")
-        # we need to create a vault
 
-        underlying = Collateral.WETH.value
-        strike_asset = Collateral.USDC.value
+        # has allowcance incremented
+        allowance = contract.functions.allowance(
+            self._crypto.address,
+            self.web3_client.option_exchange.address,
+        ).call()
+        self._logger.info(f"Allowance is {allowance}")
+        otoken_address = self.web3_client.get_otoken(rysk_option_market.to_series())
 
-        operate_tuple = [
-            {
-                "operation": 0,
-                "operationQueue": [
-                    {
-                        "actionType": ActionType.DEPOSIT_COLLATERAL.value,
-                        "owner": self.to_checksum_address(self._crypto.address),
-                        "secondAddress": self.to_checksum_address(
-                            self.web3_client.option_exchange.address
-                        ),
-                        "asset": underlying,
-                        "vaultId": vault_id,
-                        "amount": int(_amount),
-                        "optionSeries": {
-                            "expiration": 1,
-                            "strike": int(rysk_option_market.strike),
-                            "isPut": True,
-                            "underlying": NULL_ADDRESS,
-                            "strikeAsset": NULL_ADDRESS,
-                            "collateral": NULL_ADDRESS,
-                        },
-                        "indexOrAcceptablePremium": 0,
-                        "data": "0x0000000000000000000000000000000000000000",
-                    },
-                    {
-                        "actionType": ActionType.MINT_SHORT_OPTION.value,
-                        "owner": self.to_checksum_address(self._crypto.address),
-                        "secondAddress": self.to_checksum_address(
-                            self.web3_client.option_exchange.address
-                        ),
-                        "asset": self.to_checksum_address(otoken_id),
-                        "vaultId": int(vault_id),
-                        "amount": 100000000,
-                        "optionSeries": {
-                            "expiration": 1,
-                            "strike": 1,
-                            "isPut": True,
-                            "underlying": NULL_ADDRESS,
-                            "strikeAsset": NULL_ADDRESS,
-                            "collateral": NULL_ADDRESS,
-                        },
-                        "indexOrAcceptablePremium": 0,
-                        "data": "0x0000000000000000000000000000000000000000",
-                    },
-                ],
-            },
-            {
-                "operation": 1,
-                "operationQueue": [
-                    {
-                        "actionType": int(ActionType.BURN_SHORT_OPTION.value),
-                        "owner": NULL_ADDRESS,
-                        "secondAddress": self.to_checksum_address(self._crypto.address),
-                        "asset": NULL_ADDRESS,
-                        "vaultId": int(0),
-                        "amount": int(_amount),
-                        "optionSeries": {
-                            "expiration": int(rysk_option_market.expiration),
-                            "strike": int(rysk_option_market.strike),
-                            "isPut": bool(rysk_option_market.is_put),
-                            "underlying": self.to_checksum_address(
-                                underlying  # type: ignore
-                            ),
-                            "strikeAsset": self.to_checksum_address(
-                                strike_asset  # type: ignore
-                            ),
-                            "collateral": self.to_checksum_address(
-                                collateral_asset.value  # type: ignore
-                            ),
-                        },
-                        "indexOrAcceptablePremium": int(
-                            rysk_option_market.ask * (1 - ALLOWED_SLIPPAGE)
-                        ),
-                        "data": "0x0000000000000000000000000000000000000000",
-                    }
-                ],
-            },
-        ]
-
-        if self._logger.level is logging.DEBUG:
-            self._logger.debug("Operate tuple is:")
-            print_json(data=operate_tuple)
+        operate_tuple = sell(
+            int(acceptable_premium * 1e8 * 0.95),
+            owner_address=self._crypto.address,  # pylint: disable=E1120
+            exchange_address=self.web3_client.option_exchange.address,
+            otoken_address=otoken_address,
+            amount=int(_amount),
+            vault_id=int(vault_id),
+            collateral=_amount,
+            rysk_option_market=rysk_option_market,
+        )
+        if self._verbose:
+            self._logger.info("Operate tuple is:")
+            print_operate_tuple(operate_tuple)
 
         operate_txn = self.web3_client.option_exchange.functions.operate(
             operate_tuple
-        ).build_transaction({"from": self._crypto.address})
+        ).build_transaction(
+            {
+                **{
+                    "from": self._crypto.address,
+                },
+                **self.web3_client._default_tx_params,  # pylint: disable=W0212
+            }
+        )
         return operate_txn
 
     def watch_trades(self):

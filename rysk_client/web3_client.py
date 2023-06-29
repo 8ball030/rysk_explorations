@@ -4,6 +4,7 @@ Web3 client for RyskFinance.
 import json
 import logging
 from collections import deque
+from copy import deepcopy
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -21,6 +22,41 @@ from rysk_client.src.order import Order
 from rysk_client.src.order_side import OrderSide
 from rysk_client.src.rysk_option_market import RyskOptionMarket
 from rysk_client.src.utils import get_contract, get_logger, get_web3
+
+
+def print_operate_tuple(operate_tuple: List[Dict[str, Any]]):
+    """
+    Ensure that the operate tuple is formated ina manner compatible with
+    tenderly's api.
+    print it using rich.
+    """
+    display_tuple = deepcopy(operate_tuple)
+    keys_to_stringify = [
+        "strike",
+        "amount",
+        "indexOrAcceptablePremium",
+        "vaultId",
+        "actionType",
+    ]
+    # we create a small function to recursively stringify nested json based on the keys
+    # we want to stringify
+    def stringify_json(json_data: Any):
+        """
+        Recursively stringify json data.
+        """
+        if isinstance(json_data, dict):
+            for key, value in json_data.items():
+                if key in keys_to_stringify:
+                    json_data[key] = str(value)
+                else:
+                    stringify_json(value)
+        elif isinstance(json_data, list):
+            for value in json_data:
+                stringify_json(value)
+
+    stringify_json(display_tuple)
+
+    print_json(data=display_tuple)
 
 
 class Balances(Enum):
@@ -270,7 +306,7 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
         Default transaction parameters.
         """
         return {
-            "gasPrice": self.web3.eth.gas_price,
+            "gasPrice": int(self.web3.eth.gas_price * 1.15),
         }
 
     def fetch_user_vaults(self, address: str) -> List[Dict[str, Any]]:  # noqa: W0613
@@ -391,7 +427,8 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
             amount=int(amount),
         )
         if self._verbose:
-            print_json(data=operate_tuple)
+            print_operate_tuple(operate_tuple)
+
         return self.option_exchange.functions.operate(operate_tuple).build_transaction(
             {
                 **{

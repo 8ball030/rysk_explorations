@@ -99,7 +99,7 @@ def close_long(
 
 def from_wei_to_opyn(amount: int):
     """Convert amount from wei to opyn."""
-    return amount / 10**8
+    return int(amount / 10**10)
 
 
 def sell(
@@ -110,86 +110,30 @@ def sell(
     amount: int,
     vault_id: int,
     collateral: int,
+    rysk_option_market: RyskOptionMarket = None,
 ):
-    """Create the operation to sell an option.
+    """Create the operation to sell an option."""
+    if rysk_option_market.is_put:
+        # here we retrieve how much collateral we get for the amount of options
+        # we basically need strike * amount
+        eth = collateral / 1e18
+        strike = rysk_option_market.strike / 1e18
+        _amount = from_wei_to_opyn(amount) / 1e2
+        collateral_amount = int(eth * strike * _amount)
+        collateral = Collateral.USDC.value
 
-          {
-        actionType: BigNumber.from(OpynActionType.DepositCollateral),
-        owner: addresses.user,
-        secondAddress: addresses.exchange,
-        asset: addresses.token,
-        vaultId,
-        amount: collateral,
-        optionSeries: EMPTY_SERIES,
-        indexOrAcceptablePremium: BigNumber.from(0),
-        data: ZERO_ADDRESS,
-      },
-      {
-        actionType: BigNumber.from(OpynActionType.MintShortOption),
-        owner: addresses.user,
-        secondAddress: addresses.exchange,
-        asset: oTokenAddress,
-        vaultId,
-        amount: fromWeiToOpyn(amount),
-        optionSeries: EMPTY_SERIES,
-        indexOrAcceptablePremium: BigNumber.from(0),
-        data: ZERO_ADDRESS,
-      },
-    ];
-        const vaultId = hasVault
-      ? BigNumber.from(vaults[vaultKey])
-      : BigNumber.from(vaults.length + 1);
+    else:
+        collateral_amount = amount
+        collateral = Collateral.WETH.value
 
-    const openVaultData = {
-      actionType: BigNumber.from(OpynActionType.OpenVault),
-      owner: addresses.user,
-      secondAddress: addresses.user,
-      asset: ZERO_ADDRESS,
-      vaultId,
-      amount: BigNumber.from(0),
-      optionSeries: EMPTY_SERIES,
-      indexOrAcceptablePremium: BigNumber.from(0),
-      data: utils.hexZeroPad(
-        utils.hexlify([OpenVaultCollateralType.Partially]),
-        32
-      ) as HexString,
-    };
-
-      const txData = [
-      {
-        operation: OperationType.OpynAction,
-        operationQueue: hasVault
-          ? requiredData
-          : [openVaultData, ...requiredData],
-      },
-      {
-        operation: OperationType.RyskAction,
-        operationQueue: [
-          {
-            actionType: BigNumber.from(RyskActionType.SellOption),
-            owner: ZERO_ADDRESS,
-            secondAddress: addresses.user,
-            asset: ZERO_ADDRESS,
-            vaultId: BigNumber.from(0),
-            amount,
-            optionSeries,
-            indexOrAcceptablePremium: acceptablePremium,
-            data: ZERO_ADDRESS,
-          },
-        ],
-      },
-    ];
-
-
-    """
     required_data = [
         {
             "actionType": ActionType.DEPOSIT_COLLATERAL.value,
             "owner": owner_address,
             "secondAddress": exchange_address,
-            "asset": otoken_address,
+            "asset": collateral,
             "vaultId": vault_id,
-            "amount": collateral,
+            "amount": collateral_amount,
             "optionSeries": EMPTY_SERIES,
             "indexOrAcceptablePremium": 0,
             "data": NULL_DATA,
@@ -236,8 +180,17 @@ def sell(
                     "asset": NULL_ADDRESS,
                     "vaultId": 0,
                     "amount": amount,
-                    "optionSeries": EMPTY_SERIES,
-                    "indexOrAcceptablePremium": acceptable_premium,
+                    "optionSeries": {
+                        "expiration": rysk_option_market.expiration,
+                        "strike": rysk_option_market.strike,
+                        "isPut": rysk_option_market.is_put,
+                        "underlying": Collateral.WETH.value,
+                        "strikeAsset": Collateral.USDC.value,
+                        "collateral": Collateral.WETH.value
+                        if not rysk_option_market.is_put
+                        else Collateral.USDC.value,
+                    },
+                    "indexOrAcceptablePremium": int(acceptable_premium * 1e-2),
                     "data": NULL_DATA,
                 }
             ],
