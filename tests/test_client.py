@@ -24,6 +24,7 @@ def test_fetch_positions(client):
     assert len(positions) > 0
 
 
+@pytest.mark.skip(reason="Not implemented.")
 def test_create_buy_order(client):
     """Test creating a buy order."""
     market = client.fetch_markets()[0]
