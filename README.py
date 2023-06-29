@@ -65,23 +65,30 @@ get_ipython().system(' rysk markets fetch')
 get_ipython().system(' export ETH_ADDRESS=0x9B8a204636a7aa9c33053d9C3A828720d32212e8 &&    export ETH_PRIVATE_KEY=0x75cc9212e9e1243b9a3e5db5012f39469254088e33363324ad94dd0b212d7efa &&      rysk positions list')
 
 
+# ## Expired positions
+# 
+# We can use the `--expired` flag in order to filter for the expired positions
+
 # In[5]:
 
 
 get_ipython().system(' export ETH_ADDRESS=0x9B8a204636a7aa9c33053d9C3A828720d32212e8 &&    export ETH_PRIVATE_KEY=0x75cc9212e9e1243b9a3e5db5012f39469254088e33363324ad94dd0b212d7efa &&      rysk positions list --expired')
 
 
-# In[ ]:
+# ## Settling Positions
+# We are able to settle the positions based on the vault id
+
+# In[6]:
 
 
-
+get_ipython().system(' export ETH_ADDRESS=0x9B8a204636a7aa9c33053d9C3A828720d32212e8 &&    export ETH_PRIVATE_KEY=0x75cc9212e9e1243b9a3e5db5012f39469254088e33363324ad94dd0b212d7efa &&    rysk positions settle -v 15')
 
 
 # ## Creating a Client 
 # 
 # Clients can be created from the rysk client module.
 
-# In[6]:
+# In[7]:
 
 
 from rysk_client.client import RyskClient
@@ -102,7 +109,7 @@ client
 # The client can fetch markets as so;
 # 
 
-# In[7]:
+# In[8]:
 
 
 markets = client.fetch_markets()
@@ -113,7 +120,7 @@ markets[0]
 # 
 # Tickers can be fetched from the client as so;
 
-# In[8]:
+# In[9]:
 
 
 tickers = client.fetch_tickers()
@@ -133,7 +140,7 @@ tickers[0]
 # 
 # 
 
-# In[9]:
+# In[10]:
 
 
 positions = client.fetch_positions()
@@ -142,14 +149,31 @@ positions[0]
 
 # # Tests
 
-# In[10]:
+# In[11]:
 
 
 get_ipython().system('make test')
 
 
-# In[11]:
+# In[12]:
 
 
 get_ipython().system('make fmt lint')
 
+
+# In[ ]:
+
+
+
+
+
+# # Releasing
+# Git ops is used to enable automated releases via pypi.
+# 
+# ```bash
+# export NEW_VERSION=0.2.0
+# git checkout -b v$NEW_VERSION
+# bumpversion  rysk_client/ --new-version $NEW_VERSION
+# git push && git push --tag
+# 
+# ```

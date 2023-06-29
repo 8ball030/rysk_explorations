@@ -18,7 +18,7 @@ web3 = "^6.5.0"
 
 [tool.poetry.group.dev.dependencies]
 autonomy-dev = {extras = ["all"], version = "~0"}
-# jupyterlab = "^4.0.1"
+jupyterlab = "^4.0.1"
 types-requests = "^2.31.0.1"
 bumpversion = "^0.6.0"
 

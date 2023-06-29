@@ -186,6 +186,10 @@ We can view the current positions, along with those which are expired.
     └────────────┴───────┴────────────┴───────────┴───────┴────────────┴───────────┘
 
 
+## Expired positions
+
+We can use the `--expired` flag in order to filter for the expired positions
+
 
 ```python
 ! export ETH_ADDRESS=0x9B8a204636a7aa9c33053d9C3A828720d32212e8 && \
@@ -226,10 +230,45 @@ We can view the current positions, along with those which are expired.
     └───────────┴───────┴────────────┴───────────┴────────┴────────────┴───────────┘
 
 
+## Settling Positions
+We are able to settle the positions based on the vault id
+
 
 ```python
 
+! export ETH_ADDRESS=0x9B8a204636a7aa9c33053d9C3A828720d32212e8 && \
+  export ETH_PRIVATE_KEY=0x75cc9212e9e1243b9a3e5db5012f39469254088e33363324ad94dd0b212d7efa && \
+  rysk positions settle -v 15
 ```
+
+    [2;36m[06/23/23 01:02:47][0m[2;36m [0m[34mINFO    [0m Settling vault [1;36m15[0m for                    ]8;id=770874;file:///home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages/rysk_client/cli.py\[2mcli.py[0m]8;;\[2m:[0m]8;id=837991;file:///home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages/rysk_client/cli.py#148\[2m148[0m]8;;\
+    [2;36m                    [0m         [1;36m0x9B8a204636a7aa9c33053d9C3A828720d32212[0m [2m          [0m
+    [2;36m                    [0m         [1;36me8[0m                                       [2m          [0m
+    [2;36m                   [0m[2;36m [0m[34mINFO    [0m Rysk client initialized and connected  ]8;id=936728;file:///home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages/rysk_client/client.py\[2mclient.py[0m]8;;\[2m:[0m]8;id=522814;file:///home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages/rysk_client/client.py#99\[2m99[0m]8;;\
+    [2;36m                    [0m         to the blockchain at RPC connection    [2m            [0m
+    [2;36m                    [0m         [4;94mhttps://arbitrum-goerli.rpc.thirdweb.c[0m [2m            [0m
+    [2;36m                    [0m         [4;94mom[0m                                     [2m            [0m
+    Traceback (most recent call last):
+      File "/home/tom/.pyenv/versions/3.10.4/bin/rysk", line 8, in <module>
+        sys.exit(cli())
+      File "/home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages/click/core.py", line 1126, in __call__
+        return self.main(*args, **kwargs)
+      File "/home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages/rich_click/rich_group.py", line 21, in main
+        rv = super().main(*args, standalone_mode=False, **kwargs)
+      File "/home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages/click/core.py", line 1051, in main
+        rv = self.invoke(ctx)
+      File "/home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages/click/core.py", line 1657, in invoke
+        return _process_result(sub_ctx.command.invoke(sub_ctx))
+      File "/home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages/click/core.py", line 1657, in invoke
+        return _process_result(sub_ctx.command.invoke(sub_ctx))
+      File "/home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages/click/core.py", line 1393, in invoke
+        return ctx.invoke(self.callback, **ctx.params)
+      File "/home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages/click/core.py", line 752, in invoke
+        return __callback(*args, **kwargs)
+      File "/home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages/rysk_client/cli.py", line 158, in settle
+        raise ValueError(
+    ValueError: Vault 15 has already been settled for 0x9B8a204636a7aa9c33053d9C3A828720d32212e8
+
 
 ## Creating a Client 
 
@@ -575,3 +614,19 @@ positions[0]
     [2KLinting... [38;2;114;156;31m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m [35m100%[0m [33m0:00:03[0m
     [?25h[2;36m[14:13:48][0m[2;36m [0m[34mINFO    [0m Linting completed successfully!                    ]8;id=864081;file:///home/tom/.cache/pypoetry/virtualenvs/rysk-client-O72xupT4-py3.10/lib/python3.10/site-packages/auto_dev/cli.py\[2mcli.py[0m]8;;\[2m:[0m]8;id=992553;file:///home/tom/.cache/pypoetry/virtualenvs/rysk-client-O72xupT4-py3.10/lib/python3.10/site-packages/auto_dev/cli.py#66\[2m66[0m]8;;\
 
+
+
+```python
+
+```
+
+# Releasing
+Git ops is used to enable automated releases via pypi.
+
+```bash
+export NEW_VERSION=0.2.0
+git checkout -b v$NEW_VERSION
+bumpversion  rysk_client/ --new-version $NEW_VERSION
+git push && git push --tag
+
+```
