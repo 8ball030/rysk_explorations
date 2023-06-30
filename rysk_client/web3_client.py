@@ -38,8 +38,7 @@ def print_operate_tuple(operate_tuple: List[Dict[str, Any]]):
         "vaultId",
         "actionType",
     ]
-    # we create a small function to recursively stringify nested json based on the keys
-    # we want to stringify
+
     def stringify_json(json_data: Any):
         """
         Recursively stringify json data.
@@ -55,7 +54,6 @@ def print_operate_tuple(operate_tuple: List[Dict[str, Any]]):
                 stringify_json(value)
 
     stringify_json(display_tuple)
-
     print_json(data=display_tuple)
 
 

@@ -192,7 +192,7 @@ class RyskOptionMarket:  # pylint: disable=too-many-instance-attributes
     def to_json(self):
         """Returns the option market as a json"""
         market_data = {}
-        if self.bid and self.ask and self.dhv:
+        if self.bid and self.ask and self.dhv is not None:
             market_data = {
                 "bid": self.bid / HUMAN_NUMBER_FMT_USDC,
                 "ask": self.ask / HUMAN_NUMBER_FMT_USDC,
