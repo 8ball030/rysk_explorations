@@ -2,8 +2,8 @@
 Test the rysk client.
 """
 
-
 import pytest
+import responses
 
 
 def test_fetch_markets(client):
@@ -18,10 +18,16 @@ def test_fetch_tickers(client):
     assert len(tickers) > 0
 
 
+@responses.activate
 def test_fetch_positions(client):
     """Test fetching positions."""
+    responses.add(
+        responses.POST,
+        "https://api.studio.thegraph.com/query/45686/rysk/version/latest",
+        json={"data": {"longPositions": [], "shortPositions": []}},
+    )
     positions = client.fetch_positions()
-    assert len(positions) > 0
+    assert len(positions) == 0
 
 
 @pytest.mark.skip(reason="Not implemented.")
