@@ -56,7 +56,7 @@ def install_dependencies() -> None:
         dep = HostDependency(*dependency)
         if not dep.is_present():
             logger.info(f"Installing {dep.name}")
-            dep.install()
+            # dep.install()
     logger.info("Done!")
 
 

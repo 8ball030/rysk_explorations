@@ -8,10 +8,10 @@ from rysk_client.src.utils import get_web3
 
 
 @pytest.fixture
-def rysk_option_market_manager():
+def rysk_option_market_manager(local_fork):
     """Returns a RyskOptionMarketManager"""
-
-    web3 = get_web3()
+    rpc_url = f"{local_fork.host}:{local_fork.port}"
+    web3 = get_web3(rpc_url)
     return RyskOptionMarketManager(web3)
 
 

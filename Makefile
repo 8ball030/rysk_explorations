@@ -43,11 +43,11 @@ fmt:
 	poetry run black tests rysk_client && poetry run isort tests rysk_client 
 
 lint:
-	poetry run adev lint -v -p tests
-	poetry run adev lint -v -p rysk_client
+	poetry run adev -v -n 0 lint -p tests
+	poetry run adev -v -n 0 lint -p rysk_client
 
 test: 
-	poetry run adev test -v -p tests
+	poetry run adev -v test -p tests
 
 build: fmt
 	poetry run jupyter-nbconvert README.ipynb --to markdown && poetry run jupyter-nbconvert README.ipynb --to python --execute

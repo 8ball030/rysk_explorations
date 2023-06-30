@@ -2,18 +2,8 @@
 Test the rysk client.
 """
 
+
 import pytest
-
-from rysk_client.client import RyskClient
-
-
-@pytest.fixture
-def client(default_address):
-    """Get the rysk client."""
-    crypto = {
-        "address": default_address,
-    }
-    return RyskClient(**crypto)
 
 
 def test_fetch_markets(client):
@@ -34,7 +24,7 @@ def test_fetch_positions(client):
     assert len(positions) > 0
 
 
-@pytest.mark.skip(reason="Not currently working.")
+@pytest.mark.skip(reason="Not implemented.")
 def test_create_buy_order(client):
     """Test creating a buy order."""
     market = client.fetch_markets()[0]
@@ -42,7 +32,7 @@ def test_create_buy_order(client):
     assert order
 
 
-@pytest.mark.skip(reason="Not currently working.")
+@pytest.mark.skip(reason="Not implemented.")
 def test_create_sell_order(client):
     """Test creating a sell order."""
     market = client.fetch_markets()[0]

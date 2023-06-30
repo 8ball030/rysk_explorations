@@ -20,6 +20,10 @@ def get_logger():
     logger = logging.getLogger(__name__)
     formatter = logging.Formatter("%(message)s")
 
+    # we check if the logger already has a handler
+    # to avoid adding multiple handlers
+    if logger.hasHandlers():
+        return logger
     handler = RichHandler(
         markup=False,
         rich_tracebacks=True,

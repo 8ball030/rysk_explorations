@@ -134,7 +134,7 @@ class OptionType(Enum):
 
 
 @dataclass
-class RyskOptionMarket:
+class RyskOptionMarket:  # pylint: disable=too-many-instance-attributes
     """Rysk option market."""
 
     strike: float
@@ -145,6 +145,7 @@ class RyskOptionMarket:
     bid: Optional[int] = None
     ask: Optional[int] = None
     dhv: Optional[int] = None
+    delta: Optional[int] = None
 
     @classmethod
     def from_series(cls, series):
@@ -185,6 +186,7 @@ class RyskOptionMarket:
             ask=option_drill.buy.quote,
             bid=option_drill.sell.quote,
             dhv=option_drill.exposure,
+            delta=option_drill.delta,
         )
 
     def to_json(self):
@@ -203,6 +205,8 @@ class RyskOptionMarket:
             "optionType": "put" if self.is_put else "call",
             "active": self.active,
         }
+        if self.delta:
+            result["delta"] = self.delta / HUMAN_NUMBER_FMT
         result.update(**market_data)
         return result
 

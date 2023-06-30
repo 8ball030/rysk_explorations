@@ -3,6 +3,7 @@ Command line interface for rysk_client
 """
 
 import os
+import sys
 
 import rich_click as click
 
@@ -108,6 +109,7 @@ def fetch_markets(ctx, sort, is_active):
         "strike",
         "bid",
         "ask",
+        "delta",
     ]
     sorted_markets = sorted(markets, key=lambda x: int(x[sort]))
     render_table("Markets", sorted_markets, columns)
@@ -128,9 +130,11 @@ def fetch_tickers(ctx, sort, market):
 
 @positions.command("list")
 @click.option("--expired", "-e", is_flag=True, help="Include expired positions.")
+@click.option("--market", "-m", default=None, help="Filter by market.")
+@click.option("--is_open", "-o", is_flag=True, help="Filter by open positions")
 @click.pass_context
-def list_positions(ctx, expired):
-    """List positions."""
+def list_positions(ctx, expired, market, is_open):
+    """List positions retriueved fromt the lens contract."""
     client = ctx.obj["client"]
     logger = ctx.obj["logger"]
     logger.info(
@@ -146,6 +150,11 @@ def list_positions(ctx, expired):
         "unrealizedPnl",
         "realizedPnl",
     ]
+    if market:
+        positions = [p for p in positions if p["symbol"] == market]
+    if is_open:
+        positions = [p for p in positions if p["size"] != 0]
+
     render_table("Positions", positions, columns)
 
 
@@ -159,11 +168,37 @@ def watch(ctx):
 
 @positions.command("close")
 @click.pass_context
-def close(ctx):
+@click.option("--market", "-m", required=True, help="Market to close.")
+@click.option(
+    "--size",
+    "-s",
+    required=False,
+    help="Size to close. Default is All.",
+    default=None,
+    type=click.FLOAT,
+)
+def close(ctx, market, size):
     """Close a position."""
-    client = ctx.obj["client"]
-    assert client.web3_client.web3.is_connected()
-    raise NotImplementedError
+    client: RyskClient = ctx.obj["client"]
+    logger = ctx.obj["logger"]
+    user_address = client._crypto.address  # pylint: disable=protected-access
+    positions = client.fetch_positions()
+    if market not in (f["symbol"] for f in positions):
+        raise ValueError(
+            f"User {user_address} does not have an open position in {market}"
+        )
+    positions = [p for p in positions if p["symbol"] == market]
+    position = positions[0]
+    if not position:
+        raise ValueError(
+            f"User {user_address} does not have an open position in {market}"
+        )
+    logger.info(f"Closing position for {user_address}")
+    txn = client.close_long(market, size)
+    if txn:
+        logger.info(f"Transaction hash: {txn}")
+    else:
+        logger.info("No transaction hash returned. Check logs for errors.")
 
 
 @positions.command("settle")
@@ -251,6 +286,9 @@ def create_trade(ctx, market, side, amount):
     client = ctx.obj["client"]
     logger = ctx.obj["logger"]
     trade = client.create_order(market, amount, side)
+    if not trade:
+        logger.error("Failed to create trade.")
+        sys.exit(1)
     logger.info(f"Created trade: {trade}")
 
 
