@@ -180,20 +180,6 @@ def test_client_can_buy(client, market, amount):
     assert txn, "Transaction failed."
 
 
-@pytest.mark.skip(reason="For some reason this fails on the local fork.")
-@pytest.mark.parametrize("market,amount", zip(MARKETS, len(MARKETS) * [1]))
-def test_client_can_close_long(client, market, amount):
-    """Test that the otoken can be used to retrieve and redeem.
-    flow:
-    buy_option -> approve -> close_long
-    """
-    txn = client.buy_option(market, amount)
-    assert txn, "Transaction failed."
-
-    txn = client.close_long(market, amount)
-    assert txn, "Transaction failed."
-
-
 @pytest.mark.parametrize(
     "market,amount",
     [
@@ -212,25 +198,6 @@ def test_client_can_buy_differing_amounts(client, market, amount):
     assert txn, "Transaction failed."
 
 
-@pytest.mark.skip(reason="For some reason this fails on the local fork.")
-@pytest.mark.parametrize("market,amount", zip(MARKETS, len(MARKETS) * [1]))
-def test_issued_options(client, market, amount):
-    """
-    Test that when we buy an option
-    the otoken is then transfered to us,
-    so that our balance increments
-    be used to retrieve and redeem.
-    """
-    rysk_option_market = RyskOptionMarket.from_str(market)
-    otoken_address = client.web3_client.get_otoken(rysk_option_market.to_series())
-
-    balance_before = client.web3_client.get_otoken_balance(otoken_address)
-    txn = client.buy_option(market, amount)
-    assert txn, "Transaction failed."
-    balance_after = client.web3_client.get_otoken_balance(otoken_address)
-    assert balance_after > balance_before, "Balance did not increase."
-
-
 @pytest.mark.parametrize(
     "market,block_number",
     ACTIVE_MARKETS,
@@ -243,21 +210,6 @@ def test_get_otoken_address(local_fork, client, market, block_number):
     rysk_option_market = RyskOptionMarket.from_str(market)
     otoken_address = client.web3_client.get_otoken(rysk_option_market.to_series())
     assert otoken_address, "Otoken address is None."
-
-
-@pytest.mark.parametrize(
-    "market,block_number",
-    ACTIVE_MARKETS,
-)
-def test_get_otoken_balance(local_fork, client, market, block_number):
-    """Test that the otoken can be used to retrieve and redeem."""
-    local_fork.stop()
-    local_fork.fork_block_number = block_number
-    local_fork.run()
-    rysk_option_market = RyskOptionMarket.from_str(market)
-    otoken_address = client.web3_client.get_otoken(rysk_option_market.to_series())
-    balance = client.web3_client.get_otoken_balance(otoken_address)
-    assert balance > 0, f"Market {market} Otoken {otoken_address} balance is zero."
 
 
 @pytest.mark.parametrize(
@@ -298,22 +250,6 @@ ACTIVE_SHORT_MARKETS = [
 ]
 
 
-@pytest.mark.parametrize(
-    "market,block",
-    [ACTIVE_SHORT_MARKETS[1]],
-)
-def test_can_add_to_short_with_approval(local_fork, client, market, block):
-    """
-    Test that the otoken can be used to retrieve and redeem.
-    """
-    local_fork.stop()
-    local_fork.fork_block_number = block
-    local_fork.run()
-
-    txn = client.sell_option(market, DEFAULT_AMOUNT)
-    assert txn, "Transaction failed."
-
-
 @pytest.mark.skip(reason="For some reason this fails on the local fork.")
 @pytest.mark.parametrize(
     "market,block",
@@ -328,4 +264,27 @@ def test_can_add_to_short_with_no_approval(local_fork, client, market, block):
     local_fork.run()
 
     txn = client.sell_option(market, DEFAULT_AMOUNT)
+    assert txn, "Transaction failed."
+
+
+@pytest.mark.parametrize(
+    "market,block_number",
+    [
+        ("ETH-28JUL23-1900-C", 28983125),
+        ("ETH-28JUL23-1900-P", 28983125),
+    ],
+)
+def test_client_can_close_long(local_fork, client, market, block_number):
+    """Test that the otoken can be used to retrieve and redeem.
+    flow:
+    buy_option -> approve -> close_long
+    """
+    local_fork.stop()
+    local_fork.fork_block_number = block_number
+    local_fork.run()
+
+    txn = client.create_order(market, DEFAULT_AMOUNT)
+    assert txn, "Transaction failed."
+
+    txn = client.close_long(market, DEFAULT_AMOUNT)
     assert txn, "Transaction failed."

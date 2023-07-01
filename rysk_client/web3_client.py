@@ -20,7 +20,6 @@ from rysk_client.src.crypto import EthCrypto
 from rysk_client.src.operation_factory import close_long
 from rysk_client.src.order import Order
 from rysk_client.src.order_side import OrderSide
-from rysk_client.src.rysk_option_market import RyskOptionMarket
 from rysk_client.src.utils import get_contract, get_logger, get_web3
 
 
@@ -157,7 +156,7 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
             )
 
             return 0
-        return result[0] / 1_000_000
+        return result[0]
 
     def get_balances(self):
         """
@@ -337,7 +336,7 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
             series["expiration"],
             series["isPut"],
             series["strike"],
-            Collateral.USDC.value if series["isPut"] else Collateral.WETH.value,
+            series["collateral"],
         )
         return self.option_registry.functions.getOtoken(*arguments).call()
 
@@ -409,15 +408,12 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
     def close_long(
         self,
         acceptable_premium: int,
-        market_name: str,
         amount: int,
         otoken_address: str,
     ):
         """
         Build the transaction to close a long position.
         """
-        rysk_option_market = RyskOptionMarket.from_str(market_name)
-        self._logger.info(f"Closing {amount} of {rysk_option_market.name}")
         operate_tuple = close_long(
             acceptable_premium=acceptable_premium,
             owner_address=self._crypto.address,  # type: ignore
@@ -436,3 +432,9 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
                 **self._default_tx_params,
             }
         )
+
+    def get_series_info(self, otoken_address: str) -> Dict[str, Any]:
+        """
+        Returns the series info.
+        """
+        return self.option_registry.functions.getSeriesInfo(otoken_address).call()

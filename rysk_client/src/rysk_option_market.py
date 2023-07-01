@@ -146,6 +146,7 @@ class RyskOptionMarket:  # pylint: disable=too-many-instance-attributes
     ask: Optional[int] = None
     dhv: Optional[int] = None
     delta: Optional[int] = None
+    _collateral: Optional[Collateral] = None
 
     @classmethod
     def from_series(cls, series):
@@ -220,9 +221,7 @@ class RyskOptionMarket:  # pylint: disable=too-many-instance-attributes
             "isPut": self.is_put,
             "underlying": Collateral.WETH.value,
             "strikeAsset": Collateral.USDC.value,
-            "collateral": Collateral.USDC.value
-            if self.is_put
-            else Collateral.WETH.value,
+            "collateral": self.collateral.value,
         }
 
     @classmethod
@@ -238,6 +237,18 @@ class RyskOptionMarket:  # pylint: disable=too-many-instance-attributes
         _strike = int(_name[2]) * 10**18
         _is_put = _name[3] == "P"
         return cls(_strike, _expiration, _is_put)
+
+    @property
+    def collateral(self):
+        """Returns the collateral of the option market"""
+        if self._collateral is None:
+            return Collateral.USDC if self.is_put else Collateral.WETH
+        return self._collateral
+
+    @collateral.setter
+    def collateral(self, collateral):
+        """Sets the collateral of the option market"""
+        self._collateral = collateral
 
 
 class RyskOptionMarketManager:
