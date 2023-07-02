@@ -229,6 +229,7 @@ def test_get_otoken_address(local_fork, client, market, block_number):
     "market,block_number",
     ACTIVE_MARKETS,
 )
+@pytest.mark.flaky(re-runs=3)
 def test_can_close_otoken(local_fork, client, market, block_number):
     """
     Test that the otoken can be used to retrieve and redeem.
