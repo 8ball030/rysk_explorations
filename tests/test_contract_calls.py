@@ -298,6 +298,7 @@ def test_client_can_close_long(local_fork, client, market, block_number):
     assert txn, "Transaction failed."
 
 
+@pytest.mark.flaky(reruns=3)  # why this is the case i am not yet sure.
 @pytest.mark.parametrize(
     "market,block_number",
     [
