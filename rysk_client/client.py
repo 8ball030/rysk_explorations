@@ -683,5 +683,6 @@ class RyskClient:  # noqa: R0902
             collateral_asset=rysk_option_market.collateral,
             collateral_amount=int(_amount),
             vault_id=vault_id,
+            rysk_option_market=rysk_option_market,
         )
         return self._sign_and_sumbit(txn)

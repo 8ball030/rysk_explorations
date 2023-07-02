@@ -423,6 +423,7 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
         collateral_amount: int,
         collateral_asset: str,
         vault_id: int,
+        rysk_option_market: str,
     ):
         """
         Build the transaction to close a short position.
@@ -435,6 +436,7 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
             collateral_amount=int(collateral_amount),
             collateral_asset=collateral_asset.value,
             vault_id=vault_id,
+            rysk_option_market=rysk_option_market,
         )
         if self._verbose:
             print_operate_tuple(operate_tuple)

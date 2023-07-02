@@ -209,10 +209,18 @@ def close_short(
     collateral_amount: int,
     collateral_asset: str,
     vault_id: int,
+    rysk_option_market: RyskOptionMarket,
 ):
     """
     Create the operation to close a short options
     """
+    if rysk_option_market.is_put:
+        # here we retrieve how much collateral we get for the amount of options
+        # we basically need strike * amount
+        eth = collateral_amount / 1e18
+        strike = rysk_option_market.strike / 1e18
+        _amount = from_wei_to_opyn(amount) / 1e2
+        collateral_amount = int(eth * strike * _amount)
 
     tx_data = [
         {
