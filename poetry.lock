@@ -604,14 +604,14 @@ bump2version = "*"
 
 [[package]]
 name = "ccxt"
-version = "3.1.56"
+version = "3.1.59"
 description = "A JavaScript / TypeScript / Python / C# / PHP cryptocurrency trading library with support for 130+ exchanges"
 category = "main"
 optional = false
 python-versions = "*"
 files = [
-    {file = "ccxt-3.1.56-py2.py3-none-any.whl", hash = "sha256:8a554ab47a2b2a167dcb9a9a37388a370498f191b179e68ed9e21ccf2b4ca233"},
-    {file = "ccxt-3.1.56.tar.gz", hash = "sha256:94f346c27d0898ef5e192c5b15d5d1bb9bc9f447d576d1ff6ba034409723780e"},
+    {file = "ccxt-3.1.59-py2.py3-none-any.whl", hash = "sha256:7ad4a78e57f0097df66317cf06fba48509cf02ea2ab33b275b6ded2928ec8b4e"},
+    {file = "ccxt-3.1.59.tar.gz", hash = "sha256:6aa85a1762c8aca92ec196ce29597b9dfa4e1c92393a4f09a9f3d5c00909f514"},
 ]
 
 [package.dependencies]
@@ -3435,7 +3435,7 @@ files = [
 name = "pyyaml"
 version = "6.0"
 description = "YAML parser and emitter for Python"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.6"
 files = [
@@ -3724,6 +3724,27 @@ urllib3 = ">=1.21.1,<3"
 [package.extras]
 socks = ["PySocks (>=1.5.6,!=1.5.7)"]
 use-chardet-on-py3 = ["chardet (>=3.0.2,<6)"]
+
+[[package]]
+name = "responses"
+version = "0.23.1"
+description = "A utility library for mocking out the `requests` Python library."
+category = "main"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "responses-0.23.1-py3-none-any.whl", hash = "sha256:8a3a5915713483bf353b6f4079ba8b2a29029d1d1090a503c70b0dc5d9d0c7bd"},
+    {file = "responses-0.23.1.tar.gz", hash = "sha256:c4d9aa9fc888188f0c673eff79a8dadbe2e75b7fe879dc80a221a06e0a68138f"},
+]
+
+[package.dependencies]
+pyyaml = "*"
+requests = ">=2.22.0,<3.0"
+types-PyYAML = "*"
+urllib3 = ">=1.25.10"
+
+[package.extras]
+tests = ["coverage (>=6.0.0)", "flake8", "mypy", "pytest (>=7.0.0)", "pytest-asyncio", "pytest-cov", "pytest-httpserver", "tomli", "tomli-w", "types-requests"]
 
 [[package]]
 name = "rfc3339-validator"
@@ -4051,6 +4072,18 @@ files = [
 [package.extras]
 docs = ["myst-parser", "pydata-sphinx-theme", "sphinx"]
 test = ["argcomplete (>=2.0)", "pre-commit", "pytest", "pytest-mock"]
+
+[[package]]
+name = "types-pyyaml"
+version = "6.0.12.10"
+description = "Typing stubs for PyYAML"
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "types-PyYAML-6.0.12.10.tar.gz", hash = "sha256:ebab3d0700b946553724ae6ca636ea932c1b0868701d4af121630e78d695fc97"},
+    {file = "types_PyYAML-6.0.12.10-py3-none-any.whl", hash = "sha256:662fa444963eff9b68120d70cda1af5a5f2aa57900003c2006d7626450eaae5f"},
+]
 
 [[package]]
 name = "types-requests"
@@ -4561,4 +4594,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8,<=3.11"
-content-hash = "6cb921f9d8db0a917279515fca0cda3eec25e8672cb46d2cc0b224f41f175792"
+content-hash = "3ce943332f6e471046cdcc78f2eeaa0eee7f52647d2bbcfd58118cfe8d1190cb"

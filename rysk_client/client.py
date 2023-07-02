@@ -25,6 +25,15 @@ EXPOSURE_DEVISOR = 1_000_000_000_000_000_000
 
 ALLOWED_SLIPPAGE = 0.15
 
+NULL_SERIES = (
+    0,
+    0,
+    False,
+    "0x0000000000000000000000000000000000000000",
+    "0x0000000000000000000000000000000000000000",
+    "0x0000000000000000000000000000000000000000",
+)
+
 
 class ApprovalException(Exception):
     """
@@ -290,12 +299,20 @@ class RyskClient:  # noqa: R0902
         self,
         market: str,
         amount: float,
-        collateral_asset: str = "usdc",
+        collateral_asset: str = "USDC",
         leverage: float = 1,
     ):
         """
         Create a buy option order.
         """
+        # now we can try to buy the option
+        if not self._markets:
+            self._logger.info("Fetching Tickers.")
+            self.fetch_tickers()  # type: ignore
+
+        self._logger.info(f"Fetching acceptable premium for {market}")
+        rysk_option_market = self.get_market(market)
+        rysk_option_market.collateral = Collateral.from_symbol(collateral_asset)
         self._logger.info(
             f"Buying {amount} of {market} with {collateral_asset} collateral @ {leverage}x leverage."
         )
@@ -304,7 +321,9 @@ class RyskClient:  # noqa: R0902
             raise ValueError(
                 f"Collateral asset {collateral_asset} is not supported by the protocol."
             )
-        collateral_asset_name = f"settlement_{collateral_asset}"
+        collateral_asset_name = (
+            f"settlement_{rysk_option_market.collateral.name.lower()}"
+        )
         collateral_contract = get_contract(collateral_asset_name, self.web3_client.web3)
         collateral_approved = self.web3_client.is_approved(
             collateral_contract,
@@ -332,23 +351,14 @@ class RyskClient:  # noqa: R0902
             else:
                 self._logger.error(f"Transaction failed: {result}")
 
-        # now we can try to buy the option
-        if not self._markets:
-            self._logger.info("Fetching Tickers.")
-            self.fetch_tickers()  # type: ignore
-
-        self._logger.info(f"Fetching acceptable premium for {market}")
-        rysk_option_market = self.get_market(market)
-
         otoken_address = self.web3_client.get_otoken(rysk_option_market.to_series())
-
         balance = self.web3_client.get_otoken_balance(otoken_address)
         self._logger.info(f"Balance of {otoken_address}: {balance}")
 
         self._logger.info(
             f"Fetching market data for {market}. Otoken address: {otoken_address}"
         )
-        _amount = amount * 1000000000000000000
+        _amount = amount * 1_000_000_000_000_000_000
         acceptable_premium = self.web3_client.get_options_prices(  # type: ignore
             rysk_option_market.to_series(),
             rysk_option_market.dhv,
@@ -357,13 +367,17 @@ class RyskClient:  # noqa: R0902
         )  # pylint: disable=E1120
 
         # we format 2 decimal places
-        self._logger.info(f"Acceptable premium: ${acceptable_premium:.2f}")
+        self._logger.info(f"Acceptable premium: ${acceptable_premium / 1e6:.2f}")
+
+        # we check if we need to issue the option
+        issuance_required = self.is_issuance_required(otoken_address)
 
         operate_tuple = buy(
-            int(acceptable_premium * 1e8),
+            int(acceptable_premium),
             owner_address=self._crypto.address,  # pylint: disable=E1120
             amount=int(_amount),
             option_market=rysk_option_market,
+            issuance_required=issuance_required,
         )
 
         if self._verbose:
@@ -378,6 +392,13 @@ class RyskClient:  # noqa: R0902
             raise ValueError(error) from error
 
         return txn
+
+    def is_issuance_required(self, otoken_address: str) -> bool:
+        """
+        Returns True if an issuance is required.
+        """
+        result = self.web3_client.get_series_info(otoken_address)
+        return result == NULL_SERIES
 
     def sell_option(  # noqa
         self,
@@ -540,13 +561,15 @@ class RyskClient:  # noqa: R0902
     def close_long(self, market: str, size: float):
         """Close long."""
         self._logger.info(f"Closing long {market}...")
-        rysk_option_market = RyskOptionMarket.from_str(market)
-        otoken_address = self.web3_client.get_otoken(rysk_option_market.to_series())
+        # as we are long, we use usdc as collateral
+        collateral_asset = Collateral.USDC
+        _market = self.get_market(market)
+        _market.collateral = collateral_asset
+        otoken_address = self.web3_client.get_otoken(_market.to_series())
         if size is None:
-            _amount = self.web3_client.get_otoken_balance(otoken_address) / 10**8
+            _amount = self.web3_client.get_otoken_balance(otoken_address) * 10**10
         else:
             _amount = size * 1e18
-        _market = self.get_market(market)
         if _market.name not in self.active_markets:
             raise ValueError(f"{market} is not an active market...")
         acceptable_premium = int(_market.ask * (1 - ALLOWED_SLIPPAGE))
@@ -583,7 +606,6 @@ class RyskClient:  # noqa: R0902
 
         txn = self.web3_client.close_long(
             acceptable_premium=acceptable_premium,
-            market_name=market,
             amount=_amount,
             otoken_address=self.web3_client.web3.to_checksum_address(otoken_address),
         )

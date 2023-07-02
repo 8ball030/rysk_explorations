@@ -23,11 +23,12 @@ def buy(
     owner_address: str,
     amount: int,
     option_market: RyskOptionMarket,
+    issuance_required: bool = False,
 ):
     """Create the operation to buy an option."""
-    collateral = Collateral.USDC if option_market.is_put else Collateral.WETH
     operations = []
-    if collateral != Collateral.WETH:
+
+    if issuance_required:
         operations.append(
             {
                 "actionType": RyskActionType.ISSUE.value,
@@ -41,6 +42,7 @@ def buy(
                 "data": NULL_ADDRESS,
             }
         )
+
     operations.append(
         {
             "actionType": RyskActionType.BUY_OPTION.value,
