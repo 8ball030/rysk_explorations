@@ -17,7 +17,7 @@ from rysk_client.src.action_type import ActionType
 from rysk_client.src.collateral import Collateral
 from rysk_client.src.constants import NULL_ADDRESS, NULL_DATA, RPC_URL, WSS_URL
 from rysk_client.src.crypto import EthCrypto
-from rysk_client.src.operation_factory import close_long
+from rysk_client.src.operation_factory import close_long, close_short
 from rysk_client.src.order import Order
 from rysk_client.src.order_side import OrderSide
 from rysk_client.src.utils import get_contract, get_logger, get_web3
@@ -245,30 +245,6 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
             rich_logs = self.option_exchange.events.OptionsBought().processReceipt(tx_receipt)  # type: ignore
             return dict(rich_logs[0]["args"]), False
 
-        except Exception as exc:  # pylint: disable=W0718,W0705
-            self._logger.error(
-                f"An exception occurred while trying to get the transaction arguments for {tx_receipt}: {exc}"
-            )
-            return {}, True
-
-    def sign_and_sumbit(self, txn: dict, private_key: str) -> str:  # type: ignore
-        """
-        Sign the transaction with the private key and send it to the blockchain.
-        """
-
-        signed_txn = self.web3.eth.account.sign_transaction(
-            txn, private_key=private_key
-        )
-        tx_hash = self.web3.eth.send_raw_transaction(signed_txn.rawTransaction)
-        self._logger.debug(f"Transaction hash: {tx_hash.hex()}")
-        receipt = self.web3.eth.wait_for_transaction_receipt(tx_hash, 180)
-        # we need to check the receipt to see if the transaction was successful
-        if receipt["status"] == 0:
-            self._logger.error(f"Transaction failed: {receipt}")
-            return False  # type: ignore
-        self._logger.debug(f"Transaction successful: {receipt}")
-        return tx_hash.hex()
-
     def is_approved(
         self, contract: Contract, spender: str, owner: str, amount: int
     ) -> bool:
@@ -303,7 +279,7 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
         Default transaction parameters.
         """
         return {
-            "gasPrice": int(self.web3.eth.gas_price * 1.15),
+            "gasPrice": int(self.web3.eth.gas_price * 1.5),
         }
 
     def fetch_user_vaults(self, address: str) -> List[Dict[str, Any]]:  # noqa: W0613
@@ -438,3 +414,39 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
         Returns the series info.
         """
         return self.option_registry.functions.getSeriesInfo(otoken_address).call()
+
+    def close_short(
+        self,
+        acceptable_premium: int,
+        amount: int,
+        otoken_address: str,
+        collateral_amount: int,
+        collateral_asset: str,
+        vault_id: int,
+        rysk_option_market: str,
+    ):
+        """
+        Build the transaction to close a short position.
+        """
+        operate_tuple = close_short(
+            acceptable_premium=acceptable_premium,
+            owner_address=self._crypto.address,  # type: ignore
+            otoken_address=self.web3.to_checksum_address(otoken_address),
+            amount=int(amount),
+            collateral_amount=int(collateral_amount),
+            collateral_asset=collateral_asset.value,
+            vault_id=vault_id,
+            rysk_option_market=rysk_option_market,
+        )
+        if self._verbose:
+            print_operate_tuple(operate_tuple)
+
+        return self.option_exchange.functions.operate(operate_tuple).build_transaction(
+            {
+                **{
+                    "from": self._crypto.address,  # type: ignore
+                    "nonce": self.web3.eth.get_transaction_count(self._crypto.address),  # type: ignore
+                },
+                **self._default_tx_params,
+            }
+        )

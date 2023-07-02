@@ -112,6 +112,7 @@ def sell(
     amount: int,
     vault_id: int,
     collateral: int,
+    issue_new_vault: bool = False,
     rysk_option_market: RyskOptionMarket = None,
 ):
     """Create the operation to sell an option."""
@@ -152,7 +153,7 @@ def sell(
             "data": NULL_DATA,
         },
     ]
-    if vault_id == 0:
+    if issue_new_vault:
         # we need to open a vault
         required_data = [
             {
@@ -198,3 +199,72 @@ def sell(
             ],
         },
     ]
+
+
+def close_short(
+    acceptable_premium: int,
+    owner_address: str,
+    otoken_address: str,
+    amount: int,
+    collateral_amount: int,
+    collateral_asset: str,
+    vault_id: int,
+    rysk_option_market: RyskOptionMarket,
+):
+    """
+    Create the operation to close a short options
+    """
+    if rysk_option_market.is_put:
+        # here we retrieve how much collateral we get for the amount of options
+        # we basically need strike * amount
+        eth = collateral_amount / 1e18
+        strike = rysk_option_market.strike / 1e18
+        _amount = from_wei_to_opyn(amount) / 1e2
+        collateral_amount = int(eth * strike * _amount)
+
+    tx_data = [
+        {
+            "operation": OperationType.RYSK_ACTION.value,
+            "operationQueue": [
+                {
+                    "actionType": RyskActionType.BUY_OPTION.value,
+                    "owner": NULL_ADDRESS,
+                    "secondAddress": owner_address,
+                    "asset": otoken_address,
+                    "vaultId": 0,
+                    "amount": amount,
+                    "optionSeries": EMPTY_SERIES,
+                    "indexOrAcceptablePremium": acceptable_premium,
+                    "data": NULL_DATA,
+                }
+            ],
+        },
+        {
+            "operation": OperationType.OPYN_ACTION.value,
+            "operationQueue": [
+                {
+                    "actionType": ActionType.BURN_SHORT_OPTION.value,
+                    "owner": owner_address,
+                    "secondAddress": owner_address,
+                    "asset": otoken_address,
+                    "vaultId": vault_id,
+                    "amount": from_wei_to_opyn(amount),
+                    "optionSeries": EMPTY_SERIES,
+                    "indexOrAcceptablePremium": 0,
+                    "data": NULL_DATA,
+                },
+                {
+                    "actionType": ActionType.WITHDRAW_COLLATERAL.value,
+                    "owner": owner_address,
+                    "secondAddress": owner_address,
+                    "asset": collateral_asset,
+                    "vaultId": vault_id,
+                    "amount": collateral_amount,
+                    "optionSeries": EMPTY_SERIES,
+                    "indexOrAcceptablePremium": 0,
+                    "data": NULL_DATA,
+                },
+            ],
+        },
+    ]
+    return tx_data

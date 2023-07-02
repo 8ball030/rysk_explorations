@@ -4,6 +4,7 @@ Helper functions for the rysk_client package.
 import json
 import logging
 import os
+import sys
 from copy import deepcopy
 from typing import List, Optional
 
@@ -24,12 +25,16 @@ def get_logger():
     # to avoid adding multiple handlers
     if logger.hasHandlers():
         return logger
-    handler = RichHandler(
-        markup=False,
-        rich_tracebacks=True,
-        locals_max_string=None,
-        locals_max_length=None,
-    )
+    if sys.stdout.isatty():
+
+        handler = RichHandler(
+            markup=False,
+            rich_tracebacks=True,
+            locals_max_string=None,
+            locals_max_length=None,
+        )
+    else:
+        handler = logging.StreamHandler(sys.stdout)
 
     handler.setFormatter(formatter)
     logger.addHandler(handler)
