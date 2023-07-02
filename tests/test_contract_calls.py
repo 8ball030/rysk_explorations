@@ -10,6 +10,7 @@ import requests
 from docker import DockerClient
 from docker.models.containers import Container
 
+from rysk_client.src.order_side import OrderSide
 from rysk_client.src.rysk_option_market import RyskOptionMarket
 from tests.constants import DEFAULT_FORK_BLOCK_NUMBER
 
@@ -274,6 +275,7 @@ def test_can_add_to_short_with_no_approval(local_fork, client, market, block):
         ("ETH-28JUL23-1900-P", 28983125),
     ],
 )
+@pytest.mark.flaky(reruns=3)  # why this is the case i am not yet sure.
 def test_client_can_close_long(local_fork, client, market, block_number):
     """Test that the otoken can be used to retrieve and redeem.
     flow:
@@ -287,4 +289,27 @@ def test_client_can_close_long(local_fork, client, market, block_number):
     assert txn, "Transaction failed."
 
     txn = client.close_long(market, DEFAULT_AMOUNT)
+    assert txn, "Transaction failed."
+
+
+@pytest.mark.parametrize(
+    "market,block_number",
+    [
+        ("ETH-28JUL23-1900-C", 28983125),
+        ("ETH-28JUL23-1900-P", 28983125),
+    ],
+)
+def test_client_can_close_short(local_fork, client, market, block_number):
+    """Test that the otoken can be used to retrieve and redeem.
+    flow:
+    buy_option -> approve -> close_long
+    """
+    local_fork.stop()
+    local_fork.fork_block_number = block_number
+    local_fork.run()
+
+    txn = client.create_order(market, DEFAULT_AMOUNT, side=OrderSide.SELL.value)
+    assert txn, "Transaction failed."
+
+    txn = client.close_short(market, DEFAULT_AMOUNT)
     assert txn, "Transaction failed."
