@@ -1,7 +1,6 @@
 """
 Test the rysk client.
 """
-
 import pytest
 import responses
 
@@ -30,15 +29,20 @@ def test_fetch_positions(client):
     assert len(positions) == 0
 
 
-@pytest.mark.skip(reason="Not implemented.")
-def test_create_buy_order(client):
+@pytest.mark.parametrize(
+    "market,block_number",
+    [
+        ("ETH-28JUL23-1900-C", 28983125),
+        ("ETH-28JUL23-1900-P", 28983125),
+    ],
+)
+def test_create_buy_order(local_fork, client, market, block_number):
     """Test creating a buy order."""
-    market = client.fetch_markets()[0]
-    order = client.create_order(market["id"], 1, "buy")
+    local_fork.restart_from_block(block_number)
+    order = client.create_order(market, 1, "buy")
     assert order
 
 
-@pytest.mark.skip(reason="Not implemented.")
 def test_create_sell_order(client):
     """Test creating a sell order."""
     market = client.fetch_markets()[0]

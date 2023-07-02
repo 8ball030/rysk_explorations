@@ -279,7 +279,7 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
         Default transaction parameters.
         """
         return {
-            "gasPrice": int(self.web3.eth.gas_price * 1.15),
+            "gasPrice": int(self.web3.eth.gas_price * 1.5),
         }
 
     def fetch_user_vaults(self, address: str) -> List[Dict[str, Any]]:  # noqa: W0613

@@ -51,7 +51,13 @@ class LocalFork:
         """Stop the docker container."""
         # we force the container to stop
         self.container.stop()
-        self.container.remove()
+        self.container.remove(force=True)
+        wait = 0
+        while self.is_ready():
+            if wait > 10:
+                raise TimeoutError("Docker fork did not stop in time.")
+            wait += 1
+            time.sleep(1)
 
     def is_ready(self):
         """Check if the docker container is ready."""
@@ -97,6 +103,12 @@ class LocalFork:
             wait += 1
             if wait > 15:
                 raise TimeoutError("Docker fork did not start in time.")
+
+    def restart_from_block(self, block_number: int):
+        """Restart the docker container from a given block number."""
+        self.stop()
+        self.fork_block_number = block_number
+        self.run()
 
 
 def test_local_fork(local_fork):
@@ -221,9 +233,7 @@ def test_can_close_otoken(local_fork, client, market, block_number):
     """
     Test that the otoken can be used to retrieve and redeem.
     """
-    local_fork.stop()
-    local_fork.fork_block_number = block_number
-    local_fork.run()
+    local_fork.restart_from_block(block_number)
     txn = client.close_long(market, 1)
     assert txn, "Transaction failed."
 
@@ -260,9 +270,7 @@ def test_can_add_to_short_with_no_approval(local_fork, client, market, block):
     """
     Test that the otoken can be used to retrieve and redeem.
     """
-    local_fork.stop()
-    local_fork.fork_block_number = block
-    local_fork.run()
+    local_fork.restart_from_block(block)
 
     txn = client.sell_option(market, DEFAULT_AMOUNT)
     assert txn, "Transaction failed."
@@ -281,9 +289,7 @@ def test_client_can_close_long(local_fork, client, market, block_number):
     flow:
     buy_option -> approve -> close_long
     """
-    local_fork.stop()
-    local_fork.fork_block_number = block_number
-    local_fork.run()
+    local_fork.restart_from_block(block_number)
 
     txn = client.create_order(market, DEFAULT_AMOUNT)
     assert txn, "Transaction failed."
@@ -304,9 +310,7 @@ def test_client_can_close_short(local_fork, client, market, block_number):
     flow:
     buy_option -> approve -> close_long
     """
-    local_fork.stop()
-    local_fork.fork_block_number = block_number
-    local_fork.run()
+    local_fork.restart_from_block(block_number)
 
     txn = client.create_order(market, DEFAULT_AMOUNT, side=OrderSide.SELL.value)
     assert txn, "Transaction failed."

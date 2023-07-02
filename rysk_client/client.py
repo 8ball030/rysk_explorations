@@ -312,7 +312,7 @@ class RyskClient:  # noqa: R0902
         self._logger.info(f"Submitted transaction with hash: {submitted}")
         new_balance = self.web3_client.get_otoken_balance(otoken_address)
         self._logger.info(f"Otken balance: {new_balance}")
-        if new_balance == old_balance:
+        if new_balance == old_balance and side == OrderSide.BUY.value:
             self._logger.error(
                 f"Transaction failed to execute. Balance is still {new_balance}"
             )
