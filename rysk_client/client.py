@@ -113,6 +113,46 @@ class RyskClient:  # noqa: R0902
         )
         self._verbose = verbose
 
+    def _sign_and_sumbit(self, txn, retries=3, backoff=2):
+        """
+        Sign and submit transaction.
+
+        retries: number of retries
+        backoff: backoff in seconds
+
+        """
+        try:
+            txn["nonce"] = self.web3_client.web3.eth.get_transaction_count(
+                self._crypto.address
+            )
+            signed_txn = self.web3_client.web3.eth.account.sign_transaction(
+                txn, private_key=self._crypto.private_key
+            )
+            tx_hash = self.web3_client.web3.eth.send_raw_transaction(
+                signed_txn.rawTransaction
+            )
+            self._logger.debug(f"Transaction hash: {tx_hash.hex()}")
+            receipt = self.web3_client.web3.eth.wait_for_transaction_receipt(
+                tx_hash, 180
+            )
+            # we need to check the receipt to see if the transaction was successful
+            if receipt["status"] == 0:
+                self._logger.error(f"Transaction failed: {receipt}")
+                raise ValueError("Transaction Failed!")
+            self._logger.debug(f"Transaction successful: {receipt}")
+            return tx_hash.hex()
+
+        except ValueError as error:
+            if retries > 0:
+                self._logger.warning(
+                    f"Error {error} while submitting transaction. Retrying..."
+                )
+                time.sleep(backoff)
+                return self._sign_and_sumbit(
+                    txn, retries=retries - 1, backoff=backoff * 2
+                )
+            raise error
+
     def fetch_markets(self) -> List[Dict[str, Any]]:
         """
         Fetchs the markets from the subgraph.
@@ -345,11 +385,8 @@ class RyskClient:  # noqa: R0902
                 collateral_approved + int(amount * 1e18),
             )
             # we submit and sign the transaction
-            result = self.web3_client.sign_and_sumbit(txn, self._crypto.private_key)  # type: ignore
-            if result is not None:
-                self._logger.info(f"Transaction successful with hash: {result}")
-            else:
-                self._logger.error(f"Transaction failed: {result}")
+            result = self._sign_and_sumbit(txn)
+            self._logger.info(f"Transaction successful with hash: {result}")
 
         otoken_address = self.web3_client.get_otoken(rysk_option_market.to_series())
         balance = self.web3_client.get_otoken_balance(otoken_address)
@@ -435,12 +472,14 @@ class RyskClient:  # noqa: R0902
         otoken_id = self.web3_client.get_otoken(rysk_option_market.to_series())
         self._logger.info(f"Option Otoken id is {otoken_id}")
 
+        issue_new_vault = False
         if otoken_id not in set(i[1] for i in user_vaults):
             new_vault_id = len(user_vaults) + 1
             self._logger.info(
                 f"Necessary to create a vault for the user. New vault id is {new_vault_id}"
             )
             vault_id = new_vault_id
+            issue_new_vault = True
 
         else:
             # we need to use the vault
@@ -480,12 +519,8 @@ class RyskClient:  # noqa: R0902
             )
 
             self._logger.debug(f"Approve tx is {approve_tx}")
-            tx_hash = self.web3_client.sign_and_sumbit(
-                approve_tx, self._crypto.private_key
-            )
+            tx_hash = self._sign_and_sumbit(approve_tx)
             self._logger.info(f"Tx hash is {tx_hash}")
-            if not tx_hash:
-                raise ApprovalException("Approval failed.")
 
         # has allowcance incremented
         allowance = contract.functions.allowance(
@@ -496,7 +531,7 @@ class RyskClient:  # noqa: R0902
         otoken_address = self.web3_client.get_otoken(rysk_option_market.to_series())
 
         operate_tuple = sell(
-            int(acceptable_premium * 1e8 * 0.95),
+            int(acceptable_premium * 0.95 * 1e2),
             owner_address=self._crypto.address,  # pylint: disable=E1120
             exchange_address=self.web3_client.option_exchange.address,
             otoken_address=otoken_address,
@@ -504,6 +539,7 @@ class RyskClient:  # noqa: R0902
             vault_id=int(vault_id),
             collateral=_amount,
             rysk_option_market=rysk_option_market,
+            issue_new_vault=issue_new_vault,
         )
         if self._verbose:
             self._logger.info("Operate tuple is:")
@@ -535,13 +571,13 @@ class RyskClient:  # noqa: R0902
         """Settle options."""
         self._logger.info(f"Settling vault {vault_id}...")
         txn = self.web3_client.settle_vault(vault_id=vault_id)
-        return self._sign_and_sumbit(txn, self._crypto.private_key)
+        return self._sign_and_sumbit(txn)
 
     def redeem_otoken(self, otoken_id: str, amount: int):
         """Redeem otoken."""
         self._logger.info(f"Redeeming otoken {otoken_id}...")
         txn = self.web3_client.redeem_otoken(otoken_id=otoken_id, amount=amount)
-        return self._sign_and_sumbit(txn, self._crypto.private_key)
+        return self._sign_and_sumbit(txn)
 
     def redeem_market(self, market: str):
         """Redeem otoken."""
@@ -611,31 +647,41 @@ class RyskClient:  # noqa: R0902
         )
         return self._sign_and_sumbit(txn)
 
-    def _sign_and_sumbit(self, txn, retries=3, backoff=0.5):
+    def close_short(self, market: str, size: float):
         """
-        Sign and submit transaction.
-
-        retries: number of retries
-        backoff: backoff in seconds
-
+        CLose short.
         """
-        try:
-            txn["nonce"] = self.web3_client.web3.eth.get_transaction_count(
-                self._crypto.address
+        self._logger.info(f"Closing short {market}...")
+        # as we are short, we ensure we are covered
+        rysk_option_market = self.active_markets[market]
+        otoken_address = self.web3_client.get_otoken(rysk_option_market.to_series())
+
+        if size is None:
+            raise NotImplementedError(
+                "Closing short with no size is not implemented yet"
             )
-            result = self.web3_client.sign_and_sumbit(txn, self._crypto.private_key)
-            if result is not False:
-                self._logger.info(f"Transaction {result} submitted.")
-                return result
-            raise ValueError("Transaction Failed!")
+        _amount = size * 1e18
+        if rysk_option_market.name not in self.active_markets:
+            raise ValueError(f"{market} is not an active market...")
+        acceptable_premium = int(rysk_option_market.bid * (1 + ALLOWED_SLIPPAGE) * size)
 
-        except ValueError as error:
-            if retries > 0:
-                self._logger.warning(
-                    f"Error {error} while submitting transaction. Retrying..."
-                )
-                time.sleep(backoff)
-                return self._sign_and_sumbit(
-                    txn, retries=retries - 1, backoff=backoff * 2
-                )
-            raise error
+        user_vaults = self.web3_client.fetch_user_vaults(self._crypto.address)
+        otoken_id = self.web3_client.get_otoken(rysk_option_market.to_series())
+        self._logger.info(f"Option Otoken id is {otoken_id}")
+
+        positions = [f for f in user_vaults if f[1] == otoken_id]
+        if len(positions) == 0:
+            raise ValueError(f"Nothing to close for {market}...")
+        if len(positions) > 1:
+            raise ValueError(f"Multiple positions for {market}...")
+        vault_id = positions[0][0]
+
+        txn = self.web3_client.close_short(
+            acceptable_premium=acceptable_premium,
+            amount=int(_amount),
+            otoken_address=self.web3_client.web3.to_checksum_address(otoken_address),
+            collateral_asset=rysk_option_market.collateral,
+            collateral_amount=int(_amount),
+            vault_id=vault_id,
+        )
+        return self._sign_and_sumbit(txn)

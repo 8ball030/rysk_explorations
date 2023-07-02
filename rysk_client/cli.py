@@ -9,6 +9,7 @@ import rich_click as click
 
 from rysk_client.client import RyskClient
 from rysk_client.src.constants import NULL_ADDRESS
+from rysk_client.src.position_side import PositionSide
 from rysk_client.src.utils import get_logger, render_table
 
 
@@ -179,7 +180,7 @@ def watch(ctx):
 )
 def close(ctx, market, size):
     """Close a position."""
-    client: RyskClient = ctx.obj["client"]
+    client = ctx.obj["client"]
     logger = ctx.obj["logger"]
     user_address = client._crypto.address  # pylint: disable=protected-access
     positions = client.fetch_positions()
@@ -188,13 +189,23 @@ def close(ctx, market, size):
             f"User {user_address} does not have an open position in {market}"
         )
     positions = [p for p in positions if p["symbol"] == market]
-    position = positions[0]
-    if not position:
+    position = [f for f in positions if f["size"] != 0]
+    if len(position) > 1:
+        raise ValueError(
+            f"User {user_address} has multiple open positions in {market}. Please visit the Rysk UI to close positions."
+        )
+    if len(position) == 0:
         raise ValueError(
             f"User {user_address} does not have an open position in {market}"
         )
+    position = position.pop()
     logger.info(f"Closing position for {user_address}")
-    txn = client.close_long(market, size)
+
+    if position["side"] == PositionSide.LONG.value:
+        txn = client.close_long(market, size)
+    else:
+        txn = client.close_short(market, size)
+
     if txn:
         logger.info(f"Transaction hash: {txn}")
     else:
