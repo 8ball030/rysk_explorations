@@ -6,6 +6,7 @@ import socket
 import pytest
 
 from rysk_client.client import RyskClient
+from rysk_client.src.constants import ARBITRUM_GOERLI, CHAINS_TO_SUBGRAPH_URL
 from rysk_client.src.subgraph import SubgraphClient
 from tests.constants import (DEFAULT_ADDRESS, DEFAULT_FORK_BLOCK_NUMBER,
                              DEFAULT_PRIVATE_KEY, TESTNET_RPC_URL)
@@ -27,7 +28,7 @@ def default_private_key():
 @pytest.fixture
 def subgraph_client():
     """Get the subgraph client."""
-    return SubgraphClient()
+    return SubgraphClient(CHAINS_TO_SUBGRAPH_URL[ARBITRUM_GOERLI])
 
 
 @pytest.fixture

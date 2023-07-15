@@ -7,7 +7,7 @@ from typing import Any, Dict, List
 
 import requests
 
-from rysk_client.src.constants import DEFAULT_TIMEOUT, SUBGRAPH_URL
+from rysk_client.src.constants import DEFAULT_TIMEOUT
 
 MARKET_SUBGRAPH_QUERY = """
 {series (
@@ -121,7 +121,7 @@ LONG_SUBGRAPH_QUERY = """
 class SubgraphClient:
     """Simple client to interact with the Rysk subgraph."""
 
-    url: str = SUBGRAPH_URL
+    url: str
 
     def _query(self, query):
         """Simple function to call a subgraph query."""
