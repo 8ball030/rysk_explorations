@@ -15,7 +15,8 @@ from web3.contract import Contract
 
 from rysk_client.src.action_type import ActionType
 from rysk_client.src.collateral import Collateral
-from rysk_client.src.constants import NULL_ADDRESS, NULL_DATA, RPC_URL, WSS_URL
+from rysk_client.src.constants import (ARBITRUM_GOERLI, NULL_ADDRESS,
+                                       NULL_DATA, Chain)
 from rysk_client.src.crypto import EthCrypto
 from rysk_client.src.operation_factory import close_long, close_short
 from rysk_client.src.order import Order
@@ -82,26 +83,31 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
         self,
         logger: Optional[logging.Logger] = None,
         crypto: Optional[EthCrypto] = None,
-        rpc_url: str = RPC_URL,
+        chain: Chain = ARBITRUM_GOERLI,
         verbose: bool = True,
     ):
         """
         Initialize the client with the web3 provider.
         """
-        self.web3: HTTPProvider = get_web3(rpc_url)
-        self.beyond_pricer = get_contract("beyond_pricer", self.web3)
-        self.opyn_controller = get_contract("opyn_controller", self.web3)
-        self.option_exchange = get_contract("option_exchange", self.web3)
-        self.option_registry = get_contract("option_registry", self.web3)
+        self.chain = chain
+        self.web3: HTTPProvider = get_web3(chain)
+        self.beyond_pricer = get_contract("beyond_pricer", self.web3, self.chain)
+        self.opyn_controller = get_contract("opyn_controller", self.web3, self.chain)
+        self.option_exchange = get_contract("option_exchange", self.web3, self.chain)
+        self.option_registry = get_contract(
+            "opyn_option_registry", self.web3, self.chain
+        )
 
-        self.user_position_lens_mk1 = get_contract("user_position_lens_mk1", self.web3)
-        self.dhv_lens_mk1 = get_contract("dhv_lens_mk1", self.web3)
+        self.user_position_lens_mk1 = get_contract(
+            "user_position_lens", self.web3, self.chain
+        )
+        self.dhv_lens_mk1 = get_contract("d_h_v_lens", self.web3, self.chain)
 
-        self.usdc = get_contract("usdc", self.web3)
-        self.weth = get_contract("weth", self.web3)
+        self.usdc = get_contract("usdc", self.web3, self.chain)
+        self.weth = get_contract("weth", self.web3, self.chain)
         # is this an artifact of the testnet?
-        self.settlement_usdc = get_contract("settlement_usdc", self.web3)
-        self.settlement_weth = get_contract("settlement_weth", self.web3)
+        self.settlement_usdc = get_contract("usdc", self.web3, self.chain)
+        self.settlement_weth = get_contract("weth", self.web3, self.chain)
 
         self._logger = logger or get_logger()
         self._processed_tx: deque = deque(maxlen=100)
@@ -112,7 +118,9 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
         """
         Get the otoken contract.
         """
-        return get_contract("otoken", self.web3, otoken_address)
+        return get_contract(
+            "o_token", self.web3, chain=self.chain, address=otoken_address
+        )
 
     def get_options_prices(
         self,
@@ -162,7 +170,7 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
         """
         Get the balances for an address
         """
-        safe_address = self.web3.to_checksum_address(self._crypto.address)
+        safe_address = self.web3.toChecksumAddress(self._crypto.address)
         return {
             "weth": self.settlement_weth.functions.balanceOf(safe_address).call()
             / 1e18,
@@ -175,7 +183,7 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
         Subscribe to boeht pending trades and completed trades.
         """
         ws_connection = websocket.WebSocketApp(
-            WSS_URL,
+            self.chain.wss_url,
             on_open=self.on_open,
             on_message=self.on_message,
             on_error=self.on_error,
@@ -349,7 +357,7 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
         Build the transaction to redeem the otoken.
         """
         self._logger.info(
-            f"Redeeming {amount} of {self.web3.to_checksum_address(otoken_id)}"
+            f"Redeeming {amount} of {self.web3.toChecksumAddress(otoken_id)}"
         )
         amount = int(amount * 1e8)
         operate_tuple = [
@@ -378,7 +386,7 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
         """
         Get the otoken balance.
         """
-        otoken = get_contract("otoken", self.web3, otoken_id)
+        otoken = get_contract("o_token", self.web3, chain=self.chain, address=otoken_id)
         return otoken.functions.balanceOf(self._crypto.address).call()  # type: ignore
 
     def close_long(
@@ -431,7 +439,7 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
         operate_tuple = close_short(
             acceptable_premium=acceptable_premium,
             owner_address=self._crypto.address,  # type: ignore
-            otoken_address=self.web3.to_checksum_address(otoken_address),
+            otoken_address=self.web3.toChecksumAddress(otoken_address),
             amount=int(amount),
             collateral_amount=int(collateral_amount),
             collateral_asset=collateral_asset.value,

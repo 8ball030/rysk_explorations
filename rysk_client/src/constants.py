@@ -2,6 +2,20 @@
 This file contains all the constants used in the rysk_client package.
 """
 import os
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Dict
+
+
+def from_camel_case_to_snake_case(string: str):
+    """
+    Convert a string from camel case to snake case.
+    Note: If the string is all uppercase, it will be converted to lowercase.
+    """
+    if string.isupper():
+        return string.lower()
+    return "".join("_" + c.lower() if c.isupper() else c for c in string).lstrip("_")
+
 
 DEFAULT_TIMEOUT = 10
 DEFAULT_ENCODING = "utf-8"
@@ -10,111 +24,118 @@ NULL_ADDRESS = "0x0000000000000000000000000000000000000000"
 NULL_DATA = "0x0000000000000000000000000000000000000000"
 SUPPORTED_LEVERAGES = [1, 1.5, 2, 3]
 
-raw_data = {
-    "localhost": {},
+CONTRACT_ADDRESSES = {
     "arbitrum": {
         "OpynController": "0x594bD4eC29F7900AE29549c140Ac53b5240d4019",
-        "OpynAddressBook": "0xCa19F26c52b11186B4b1e76a662a14DA5149EA5a",
         "OpynOracle": "0xBA1880CFFE38DD13771CB03De896460baf7dA1E7",
         "OpynNewCalculator": "0x749a3624ad2a001F935E3319743f53Ecc7466358",
-        "OpynOptionRegistry": "0x04706DE6cE851a284b569EBaE2e258225D952368",
-        "priceFeed": "0xA5a095f2a2Beb2d53382293b0FfE0f520dDEC297",
-        "volFeed": "0x3099900e3E9Fa62B291586f5046A09CF5b0Bccb9",
-        "optionProtocol": "0x08674f64DaC31f36828B63A4468A3AC3C68Db5B2",
-        "liquidityPool": "0xC10B976C671Ce9bFf0723611F01422ACbAe100A5",
-        "authority": "0x0c83E447dc7f4045b8717d5321056D4e9E86dCD2",
-        "portfolioValuesFeed": "0x14eF340B33bD4f64C160E3bfcD2B84D67E9b33dF",
-        "optionHandler": "0xA802795269588bf33739816f76B53fD6cd099b27",
-        "opynInteractions": "0x048603543a0FD41B56B831B80981Addb19C1Ea30",
-        "normDist": "0xee4CfA50123109DF8DBA8CeB37d3eA94addC4A02",
-        "BlackScholes": "0x2c215B6BaC6a4871C2e58669F0437853Da500020",
-        "optionsCompute": "0x303956BCC420B3b74b861874d39BaD5d5eE341f0",
-        "accounting": "0xd527BE017Be2C3d3d14D6bdF5C796E26bA0c5EE8",
-        "uniswapV3HedgingReactor": "0x933589C46233Efa8cCDe8287E077cA6CC51Bec17",
-        "perpHedgingReactor": "0xDd418b4Ec8396191D08957bD42F549e215B8e89a",
-        "USDC": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
-        "WETH": "0x82aF49447D8a07e3bd95BD0d56f35241523fB0xb672fe86693bf6f3b034730f5d2c77c8844d6b45ab1",
+        "OpynOptionRegistry": "0x8Bc23878981a207860bA4B185fD065f4fd3c7725",
+        "priceFeed": "0x7f86AC0c38bbc3211c610abE3841847fe19590A4",
+        "liquidityPool": "0x217749d9017cB87712654422a1F5856AAA147b80",
+        "portfolioValuesFeed": "0x7f9d820CFc109686F2ca096fFA93dd497b91C073",
+        "optionHandler": "0xc63717c4436043781a63C8c64B02Ff774350e8F8",
+        "optionExchange": "0xC117bf3103bd09552F9a721F0B8Bce9843aaE1fa",
+        "beyondPricer": "0xeA5Fb118862876f249Ff0b3e7fb25fEb38158def",
+        "d_h_v_lens": "0x10779CAE21C91897a5AdD1831Ffb813803c7fcf1",
+        "UserPositionLens": "0x02eFd4e61C1883A0FfF1044ACd61c9100859336c",
+        "USDC": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "weth": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "o_token": "0x1d96E828e0Aa743783919B24ccDB971504a96C77",
     },
-    "arbitrumGoerli": {
+    "arbitrum-goerli": {
         "OpynController": "0x11a602a5F5D823c103bb8b7184e22391Aae5F4C2",
-        "OpynAddressBook": "0xd6e67bF0b1Cdb34C37f31A2652812CB30746a94A",
         "OpynOracle": "0x35578F5A49E1f1Cf34ed780B46A0BdABA23D4C0b",
         "OpynNewCalculator": "0xcD270e755C2653e806e16dD3f78E16C89B7a1c9e",
-        "OpynOptionRegistry": "0x48A74b742bd97545ace8B0876F5BA7ED19DF6579",
-        "priceFeed": "0xDcA6c35228acb82363406CB2e7eee81B40c692aE",
-        "volFeed": "0x9Fc909273C6aF5b6fFd389Fa2B44492ff88a3be6",
-        "optionProtocol": "0x865Bd85b7275a33C87E8a7E31a125DD6338e6747",
-        "liquidityPool": "0x2ceDe96cd46C9B751EeB868A57FEDeD060Dbe6Bf",
-        "authority": "0xA524f4F9046a243c67A07dDE2D9477bf320Ed89E",
-        "portfolioValuesFeed": "0xbFC1eDc5c07ada83e0244b37A784486633910cD7",
-        "optionHandler": "0x8a265fa22aa5AF86fa763dC2cF04661bf06A52E6",
-        "opynInteractions": "0x5e5A98E2F7c71B159B9Ed771E4138d4B2464708c",
-        "normDist": "0xf63395764CAA20a54bF33fdCCdbC03b2BDc67453",
-        "BlackScholes": "0x8D3ac248d2598c0C43e1D48e5ad59093F9Cb1d40",
-        "optionsCompute": "0x8090b463afd758B59089905dc956300824cb2388",
-        "accounting": "0xCCc6ebF870aCcD83043e8dafaeB4366A4D1a2836",
-        "uniswapV3HedgingReactor": "0xE5b8F3b414a80b8C40ba438292Eb37918324d285",
-        "perpHedgingReactor": "0x34f5c89fC6b053728F264cd7f9F1cdFB887AEf86",
-        "USDC": "0x6775842ae82bf2f0f987b10526768ad89d79536e",
-        "WETH": "0x53320bE2A35649E9B2a0f244f9E9474929d3B699",
-    },
-}
-
-ADDRESSES = {
-    "beyond_pricer": {
-        "path": "./contracts/BeyondPricer.sol/BeyondPricer.json",
-        "address": "0xc939df369C0Fc240C975A6dEEEE77d87bCFaC259",
-    },
-    "opyn_controller": {
-        "path": "contracts/packages/opyn/core/Controller.sol/Controller.json",
-        "address": "0x11a602a5F5D823c103bb8b7184e22391Aae5F4C2",
-    },
-    "option_exchange": {
-        "path": "contracts/OptionExchange.sol/OptionExchange.json",
-        "address": "0xb672fE86693bF6f3b034730f5d2C77C8844d6b45",
-    },
-    "option_registry": {
-        "path": "contracts/OptionRegistry.sol/OptionRegistry.json",
-        "address": "0x4E89cc3215AF050Ceb63Ca62470eeC7C1A66F737",
-    },
-    "option_catalogue": {
-        "path": "contracts/OptionCatalogue.sol/OptionCatalogue.json",
-        "address": "0xde458dD32651F27A8895D4a92B7798Cdc4EbF2f0",
-    },
-    "usdc": {
-        "path": "contracts/interfaces/I_ERC20.sol/I_ERC20.json",
-        "address": "0x6775842AE82BF2F0f987b10526768Ad89d79536E",
-    },
-    "weth": {
-        "path": "contracts/interfaces/I_ERC20.sol/I_ERC20.json",
-        "address": "0x53320bE2A35649E9B2a0f244f9E9474929d3B699",
-    },
-    "dhv_lens_mk1": {
-        "path": "contracts/lens/DHVLensMK1.sol/DHVLensMK1.json",
-        "address": "0xe1805262E848945C8E545D1F82809Ba5bc5Ad7c0",
-    },
-    "user_position_lens_mk1": {
-        "path": "contracts/lens/UserPositionLensMK1.sol/UserPositionLensMK1.json",
-        "address": "0xa6e2ebD13Cbb085659fB8Ce87fAFdF052066017f",
-    },
-    "settlement_usdc": {
-        "path": "contracts/interfaces/I_ERC20.sol/I_ERC20.json",
-        "address": "0x408c5755b5c7a0a28D851558eA3636CfC5b5b19d",
-    },
-    "settlement_weth": {
-        "path": "contracts/interfaces/I_ERC20.sol/I_ERC20.json",
-        "address": "0x3b3a1dE07439eeb04492Fa64A889eE25A130CDd3",
-    },
-    "otoken": {
-        "path": "contracts/tokens/MintableERC20.sol/MintableERC20.json",
-        "address": None,
+        "OpynOptionRegistry": "0x4E89cc3215AF050Ceb63Ca62470eeC7C1A66F737",
+        "priceFeed": "0xf7B1e3a7856067BEcee81FdE0DD38d923b99554D",
+        "liquidityPool": "0x0B1Bf5fb77AA36cD48Baa1395Bc2B5fa0f135d8C",
+        "portfolioValuesFeed": "0x84fbb7C0a210e5e3A9f7707e1Fb725ADcf0CF528",
+        "optionHandler": "0x1F63F3B37f818f05ebefaCa11086e5250958e0D8",
+        "optionExchange": "0xb672fE86693bF6f3b034730f5d2C77C8844d6b45",
+        "beyondPricer": "0xc939df369C0Fc240C975A6dEEEE77d87bCFaC259",
+        "UserPositionLens": "0xa6e2ebD13Cbb085659fB8Ce87fAFdF052066017f",
+        "d_h_v_lens": "0xFC2245435e38C6EAd5Cb05ac4ef536A6226eCacb",
+        "usdc": "0x408c5755b5c7a0a28D851558eA3636CfC5b5b19d",
+        "weth": "0x3b3a1dE07439eeb04492Fa64A889eE25A130CDd3",
+        "o_token": "0xB19d2eA6f662b13F530CB84B048877E5Ed0bD8FE",
     },
 }
 
 
-RPC_URL = os.environ.get("RPC_URL", "https://arbitrum-goerli.rpc.thirdweb.com")
-TESTNET_RPC_URL = "https://arbitrum-goerli.rpc.thirdweb.com"
-WSS_URL = os.environ.get(
-    "WSS_URL",
-    "wss://quaint-billowing-morning.arbitrum-goerli.discover.quiknode.pro/def6c4c783fc626cb8a07d38f845b76b458e6e84/",
+@dataclass
+class Contract:
+    """Contract dataclass."""
+
+    path: str
+    address: str
+
+
+@dataclass
+class Chain:
+    """Chain dataclass."""
+
+    name: str
+    chain_id: int
+    rpc_url: str
+    wss_url: str
+
+
+@dataclass
+class ProtocolDeployment:
+    """Protocol deployment dataclass."""
+
+    name: str
+    contracts: Dict[str, Contract]
+    chain: Chain
+
+
+WS_URL = "wss://quaint-billowing-morning.arbitrum-goerli.discover.quiknode.pro/def6c4c783fc626cb8a07d38f845b76b458e6e84"
+ARBITRUM = Chain(
+    name="arbitrum",
+    chain_id=42161,
+    rpc_url="https://arbitrum.public-rpc.com",
+    wss_url="wss://arb1.arbitrum.io/ws",
 )
+ARBITRUM_GOERLI = Chain(
+    name="arbitrum-goerli",
+    chain_id=421611,
+    rpc_url="https://arbitrum-goerli.rpc.thirdweb.com",
+    wss_url=WS_URL,
+)
+
+LOCAL_FORK = Chain(
+    name="local-fork",
+    chain_id=421611,
+    rpc_url="http://localhost:8545",
+    wss_url="ws://localhost:8545",
+)
+
+
+PROTOCOL_DEPLOYMENTS = {}
+SUPPORTED_CHAINS = [ARBITRUM, ARBITRUM_GOERLI]
+
+for chain in SUPPORTED_CHAINS:
+    for name, address in CONTRACT_ADDRESSES[chain.name].items():
+        PROTOCOL_DEPLOYMENTS[chain.name] = ProtocolDeployment(
+            name=name,
+            contracts={
+                from_camel_case_to_snake_case(name): Contract(
+                    path=Path(os.path.dirname(__file__))
+                    / ".."
+                    / "packages"
+                    / "eightballer"
+                    / "contracts"
+                    / from_camel_case_to_snake_case(name)
+                    / "build"
+                    / f"{from_camel_case_to_snake_case(name)}.json",
+                    address=address,
+                )
+                for name, address in CONTRACT_ADDRESSES[chain.name].items()
+            },
+            chain=chain,
+        )
+
+
+CHAIN_ID_TO_DEPLOYMENT = {
+    deploy.chain.chain_id: deploy for deploy in PROTOCOL_DEPLOYMENTS.values()
+}

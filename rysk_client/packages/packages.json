@@ -1,0 +1,9 @@
+{
+    "dev": {},
+    "third_party": {
+        "contract/eightballer/weth/0.1.0": "bafybeicf7e6u3h3pbf7fip6t7mvui4ho6ckjw5lnm6emwsnfwfatctksou",
+        "contract/eightballer/user_position_lens/0.1.0": "bafybeigg4ii625q72t5pprekxetofqdnuxefaescheevie4owf57ztic3i",
+        "contract/eightballer/usdc/0.1.0": "bafybeigpo3wzbu5buva4jygwfgwzdjis3ikzdtgzhq47gctgktcq3iqo5y",
+        "contract/eightballer/d_h_v_lens/0.1.0": "bafybeiecfm43z5szu7uyhmpltsw4xossnfxc3wt7hh4q5dl4soy7lbnjca"
+    }
+}

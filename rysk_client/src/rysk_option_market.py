@@ -8,7 +8,6 @@ from enum import Enum
 from typing import Dict, List, Optional
 
 from rysk_client.src.collateral import Collateral
-from rysk_client.src.utils import get_contract
 
 HUMAN_NUMBER_FMT = 1e18
 HUMAN_NUMBER_FMT_USDC = 1e6
@@ -39,6 +38,8 @@ class OptionStrikeDrill:
     buy: TradingSpec
     delta: int
     exposure: int
+    series_collateral_exchange_balance_usdc: Optional[int] = None
+    series_collateral_exchange_balance_weth: Optional[int] = None
 
 
 class OptionChain:
@@ -84,24 +85,35 @@ class OptionChain:
         Parse the option data.
         """
         markets = []
-        for (
-            strike,
-            sell_trading_specs,
-            buy_trading_specs,
-            delta,
-            net_dhv_exposure,
-        ) in option_data:
-            sell_trading_specs = TradingSpec(*sell_trading_specs)
-            buy_trading_specs = TradingSpec(*buy_trading_specs)
-            markets.append(
-                OptionStrikeDrill(
-                    strike,
-                    sell_trading_specs,
-                    buy_trading_specs,
-                    delta,
-                    net_dhv_exposure,
-                )
-            )
+        if len(option_data[0]) == 5:
+            cols = [
+                "strike",
+                "sell_trading_specs",
+                "buy_trading_specs",
+                "delta",
+                "exposure",
+            ]
+        elif len(option_data[0]) == 7:
+            cols = [
+                "strike",
+                "sell_trading_specs",
+                "buy_trading_specs",
+                "delta",
+                "exposure",
+                "series_collateral_exchange_balance_usdc",
+                "series_collateral_exchange_balance_weth",
+            ]
+        else:
+            raise ValueError("Option data has unexpected length. is not beta or prod.")
+
+        for row in option_data:
+            params = {}
+            for k, val in zip(cols, row):
+                if k in ["sell_trading_specs", "buy_trading_specs"]:
+                    params[k.split("_")[0]] = TradingSpec(*val)
+                else:
+                    params[k] = val
+            markets.append(OptionStrikeDrill(**params))
         return markets
 
     @property
@@ -249,41 +261,3 @@ class RyskOptionMarket:  # pylint: disable=too-many-instance-attributes
     def collateral(self, collateral):
         """Sets the collateral of the option market"""
         self._collateral = collateral
-
-
-class RyskOptionMarketManager:
-    """Class to represent the RyskOptionMarketManager."""
-
-    def fetch_option_markets(self):
-        """Fetches the option markets from the API"""
-        markets = []
-        for expiration in self._fetch_expirations():
-            put_strikes = self.option_catalogue.functions.getOptionDetails(
-                expiration, True
-            ).call()
-            call_strikes = self.option_catalogue.functions.getOptionDetails(
-                expiration, False
-            ).call()
-
-            for strike in put_strikes:
-                markets.append(RyskOptionMarket(expiration, strike, True))
-
-            for strike in call_strikes:
-                markets.append(RyskOptionMarket(expiration, strike, False))
-        self.option_markets = markets
-        return markets
-
-    def __init__(self, web3):
-        self.web3 = web3
-        self.option_markets = {}
-        self.option_catalogue = get_contract("option_catalogue", web3)
-        self.fetch_option_markets()
-
-    def fetch_option_market(self, name):
-        """
-        Fetches a specific option market from the smart contract.
-        """
-
-    def _fetch_expirations(self):
-        """Returns the expirations from the smart contract."""
-        return self.option_catalogue.functions.getExpirations().call()

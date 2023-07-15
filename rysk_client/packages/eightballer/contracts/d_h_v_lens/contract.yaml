@@ -1,0 +1,17 @@
+name: d_h_v_lens
+author: eightballer
+version: 0.1.0
+type: contract
+description: The scaffold contract scaffolds a contract to be implemented by the developer.
+license: Apache-2.0
+aea_version: '>=1.0.0, <2.0.0'
+fingerprint:
+  __init__.py: bafybeihhpkvidmewtt46xc5kki6nr6ohe3r7iuap32rk2xajnocxy63qgi
+  build/d_h_v_lens.json: bafybeidz3nvpds6gptemnaz4ukd32xbmpyoozzwszrcnvivlbyqe2x4yja
+  contract.py: bafybeienbty3u5kcpv6ruxnvbgr2d76773seh3nwtmlbdhudn2aqo5kjxe
+fingerprint_ignore_patterns: []
+class_name: DHVLens
+contract_interface_paths:
+  ethereum: build/d_h_v_lens.json
+dependencies: {}
+contracts: []

@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional
 import web3
 
 from rysk_client.src.collateral import Collateral
-from rysk_client.src.constants import RPC_URL
+from rysk_client.src.constants import ARBITRUM_GOERLI, Chain
 from rysk_client.src.crypto import EthCrypto
 from rysk_client.src.operation_factory import buy, sell
 from rysk_client.src.order_side import OrderSide
@@ -92,7 +92,7 @@ class RyskClient:  # noqa: R0902
         address: Optional[str] = None,
         private_key: Optional[str] = None,
         logger=None,
-        rpc_url: str = RPC_URL,
+        chain: Chain = ARBITRUM_GOERLI,
         verbose: bool = True,
     ):
         self._markets: List[RyskOptionMarket] = []
@@ -104,7 +104,7 @@ class RyskClient:  # noqa: R0902
         self.web3_client = Web3Client(
             self._logger,
             self._crypto,
-            rpc_url=rpc_url,
+            chain=chain,
             verbose=verbose,
         )
         self.subgraph_client = SubgraphClient()
@@ -168,7 +168,7 @@ class RyskClient:  # noqa: R0902
 
     def to_checksum_address(self, address):
         """Convert an address to a checksum address."""
-        return self.web3_client.web3.to_checksum_address(address)
+        return self.web3_client.web3.toChecksumAddress(address)
 
     def fetch_tickers(
         self, market: Optional[str] = None, is_active: Optional[bool] = True
@@ -361,10 +361,10 @@ class RyskClient:  # noqa: R0902
             raise ValueError(
                 f"Collateral asset {collateral_asset} is not supported by the protocol."
             )
-        collateral_asset_name = (
-            f"settlement_{rysk_option_market.collateral.name.lower()}"
+        collateral_asset_name = f"{rysk_option_market.collateral.name.lower()}"
+        collateral_contract = get_contract(
+            collateral_asset_name, self.web3_client.web3, self.web3_client.chain
         )
-        collateral_contract = get_contract(collateral_asset_name, self.web3_client.web3)
         collateral_approved = self.web3_client.is_approved(
             collateral_contract,
             self.web3_client.option_exchange.address,
@@ -643,7 +643,7 @@ class RyskClient:  # noqa: R0902
         txn = self.web3_client.close_long(
             acceptable_premium=acceptable_premium,
             amount=_amount,
-            otoken_address=self.web3_client.web3.to_checksum_address(otoken_address),
+            otoken_address=self.web3_client.web3.toChecksumAddress(otoken_address),
         )
         return self._sign_and_sumbit(txn)
 
@@ -679,7 +679,7 @@ class RyskClient:  # noqa: R0902
         txn = self.web3_client.close_short(
             acceptable_premium=acceptable_premium,
             amount=int(_amount),
-            otoken_address=self.web3_client.web3.to_checksum_address(otoken_address),
+            otoken_address=self.web3_client.web3.toChecksumAddress(otoken_address),
             collateral_asset=rysk_option_market.collateral,
             collateral_amount=int(_amount),
             vault_id=vault_id,
