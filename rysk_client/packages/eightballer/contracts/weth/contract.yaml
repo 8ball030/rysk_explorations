@@ -1,0 +1,17 @@
+name: weth
+author: eightballer
+version: 0.1.0
+type: contract
+description: The scaffold contract scaffolds a contract to be implemented by the developer.
+license: Apache-2.0
+aea_version: '>=1.0.0, <2.0.0'
+fingerprint:
+  __init__.py: bafybeidu2n66ym6sxew7g7bkwrpt76osc3w57utezvuuqafi2rdnuqyami
+  build/weth.json: bafybeifyt4yo3nlufzyvph53fjcpt74rl7cy2k7mixj3ts34525xibe5yi
+  contract.py: bafybeih6n3764mt5kslk5ny6neieazsrtwgq5pqf7zt667bh4zb6cnpa2m
+fingerprint_ignore_patterns: []
+class_name: Weth
+contract_interface_paths:
+  ethereum: build/weth.json
+dependencies: {}
+contracts: []

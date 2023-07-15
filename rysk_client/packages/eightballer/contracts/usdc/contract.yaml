@@ -1,0 +1,17 @@
+name: usdc
+author: eightballer
+version: 0.1.0
+type: contract
+description: The scaffold contract scaffolds a contract to be implemented by the developer.
+license: Apache-2.0
+aea_version: '>=1.0.0, <2.0.0'
+fingerprint:
+  __init__.py: bafybeid67atadtits5xrueh6kup2djdbjmzimfrwhcpo3v5znfak7v5oim
+  build/usdc.json: bafybeidtmwvfqutw3ygebrdxic633ycfm2tqpec3trko35llk6h3a4rn4m
+  contract.py: bafybeignr4v67vw77rx2w6q6w4mzcb5knnsrzmankhf5db5xek75pfovcy
+fingerprint_ignore_patterns: []
+class_name: Usdc
+contract_interface_paths:
+  ethereum: build/usdc.json
+dependencies: {}
+contracts: []

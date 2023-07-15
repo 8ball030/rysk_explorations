@@ -3,9 +3,8 @@ Helper functions for the rysk_client package.
 """
 import json
 import logging
-import os
 import sys
-from copy import deepcopy
+from dataclasses import asdict
 from typing import List, Optional
 
 from rich.console import Console
@@ -13,7 +12,8 @@ from rich.logging import RichHandler
 from rich.table import Table
 from web3 import Web3
 
-from rysk_client.src.constants import ADDRESSES, DEFAULT_ENCODING, RPC_URL
+from rysk_client.src.constants import (ARBITRUM_GOERLI, DEFAULT_ENCODING,
+                                       PROTOCOL_DEPLOYMENTS)
 
 
 def get_logger():
@@ -42,13 +42,13 @@ def get_logger():
     return logger
 
 
-def get_contract(name, web3, address=None):
+def get_contract(name, web3, chain, address=None):
     """Returns a web3 contract instance for the given contract name"""
-    path = os.path.join(os.path.dirname(__file__), "..")
-    spec = ADDRESSES[name]
-    with open(f"{path}/{spec['path']}", "r", encoding=DEFAULT_ENCODING) as abi:
+    spec = PROTOCOL_DEPLOYMENTS[chain.name].contracts[name]
+
+    with open(spec.path, "r", encoding=DEFAULT_ENCODING) as abi:
         abi = json.loads(abi.read())["abi"]
-    res = deepcopy(spec)
+    res = asdict(spec)
     del res["path"]
     res["abi"] = abi
     if address is not None:
@@ -56,11 +56,10 @@ def get_contract(name, web3, address=None):
     return web3.eth.contract(**res)
 
 
-def get_web3(rpc_url: Optional[str] = None) -> Web3:
+def get_web3(chain=ARBITRUM_GOERLI) -> Web3:
     """Returns a web3 instance connected to RPC_URL"""
-    if rpc_url is None:
-        rpc_url = RPC_URL
-    web3 = Web3(Web3.HTTPProvider(rpc_url))
+
+    web3 = Web3(Web3.HTTPProvider(chain.rpc_url))
     return web3
 
 

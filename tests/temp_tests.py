@@ -10,6 +10,7 @@ import pytest
 from web3 import Web3
 
 from rysk_client.src.action_type import ActionType
+from rysk_client.src.constants import ARBITRUM_GOERLI
 from rysk_client.src.utils import get_contract, get_logger
 
 logger = get_logger()
@@ -28,7 +29,7 @@ def options_exchange(web3):
     """
     Deploy the options exchange contract.
     """
-    return get_contract("option_exchange", web3)
+    return get_contract("option_exchange", web3, ARBITRUM_GOERLI)
 
 
 class TxTestCase:

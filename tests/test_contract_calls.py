@@ -30,8 +30,8 @@ MARKETS = [
 ]
 
 ACTIVE_MARKETS = [
-    ("ETH-30JUN23-1800-P", 28642800),
-    ("ETH-30JUN23-1900-P", 28642800),
+    "ETH-28JUL23-1800-P",
+    "ETH-28JUL23-1900-P",
 ]
 
 
@@ -127,6 +127,7 @@ def test_get_block_number(local_fork):
     assert int(res.json()["result"], 16) == DEFAULT_FORK_BLOCK_NUMBER
 
 
+@pytest.mark.skip(reason="Pending settlement of new contracts.")
 @pytest.mark.parametrize("vault_id", [6, 9, 15])
 def test_settle_vault(client, vault_id):
     """Test that the local fork is running."""
@@ -140,6 +141,7 @@ def test_fails_to_settle_vault(client):
         client.settle_vault(1000000)
 
 
+@pytest.mark.skip(reason="Pending settlement of new contracts.")
 def test_redeems_o_token(client):
     """Test that the local fork is running.
     example tx "0xcc525c8407647d314b68105a06d3f55ff1657186853c9678723a249ee37279d0"
@@ -150,6 +152,7 @@ def test_redeems_o_token(client):
     assert result, "Transaction failed."
 
 
+@pytest.mark.skip(reason="Pending settlement of new contracts.")
 @pytest.mark.parametrize(
     "market,amount",
     [
@@ -165,6 +168,7 @@ def test_retieve_and_redeem(market, amount, client):
     assert result, "Transaction failed."
 
 
+@pytest.mark.skip(reason="Pending settlement of new contracts.")
 @pytest.mark.parametrize(
     "market",
     ["ETH-02JUN23-1900-P"],
@@ -178,10 +182,10 @@ def test_redeem_market_from_str(market, client):
 @pytest.mark.parametrize(
     "market,amount",
     [
-        ("ETH-30JUN23-1900-C", 5),
-        ("ETH-30JUN23-2000-C", 5),
-        ("ETH-30JUN23-1800-P", 5),
-        ("ETH-30JUN23-1900-P", 5),
+        ("ETH-28JUL23-1900-C", 5),
+        ("ETH-28JUL23-2000-C", 5),
+        ("ETH-28JUL23-1800-P", 5),
+        ("ETH-28JUL23-1900-P", 5),
     ],
 )
 def test_client_can_buy(client, market, amount):
@@ -194,13 +198,7 @@ def test_client_can_buy(client, market, amount):
 
 
 @pytest.mark.parametrize(
-    "market,amount",
-    [
-        ("ETH-30JUN23-1800-P", 1),
-        ("ETH-30JUN23-1800-P", 5),
-        ("ETH-30JUN23-1800-P", 10),
-        ("ETH-30JUN23-1800-P", 20),
-    ],
+    "market,amount", zip(ACTIVE_MARKETS * 5, range(1, len(MARKETS) + 1))
 )
 def test_client_can_buy_differing_amounts(client, market, amount):
     """Test that the otoken can be used to retrieve and redeem.
@@ -212,21 +210,19 @@ def test_client_can_buy_differing_amounts(client, market, amount):
 
 
 @pytest.mark.parametrize(
-    "market,block_number",
+    "market",
     ACTIVE_MARKETS,
 )
-def test_get_otoken_address(local_fork, client, market, block_number):
+def test_get_otoken_address(client, market):
     """Test that the otoken can be used to retrieve and redeem."""
-    local_fork.stop()
-    local_fork.fork_block_number = block_number
-    local_fork.run()
     rysk_option_market = RyskOptionMarket.from_str(market)
     otoken_address = client.web3_client.get_otoken(rysk_option_market.to_series())
     assert otoken_address, "Otoken address is None."
 
 
+@pytest.mark.skip(reason="Pending settlement of new contracts.")
 @pytest.mark.parametrize(
-    "market,block_number",
+    "market",
     ACTIVE_MARKETS,
 )
 @pytest.mark.flaky(re_runs=3)
@@ -278,20 +274,15 @@ def test_can_add_to_short_with_no_approval(local_fork, client, market, block):
 
 
 @pytest.mark.parametrize(
-    "market,block_number",
-    [
-        ("ETH-28JUL23-1900-C", 28983125),
-        ("ETH-28JUL23-1900-P", 28983125),
-    ],
+    "market",
+    [ACTIVE_MARKETS[0]],
 )
 @pytest.mark.flaky(reruns=3)  # why this is the case i am not yet sure.
-def test_client_can_close_long(local_fork, client, market, block_number):
+def test_client_can_close_long(client, market):
     """Test that the otoken can be used to retrieve and redeem.
     flow:
     buy_option -> approve -> close_long
     """
-    local_fork.restart_from_block(block_number)
-
     txn = client.create_order(market, DEFAULT_AMOUNT)
     assert txn, "Transaction failed."
 
@@ -300,19 +291,15 @@ def test_client_can_close_long(local_fork, client, market, block_number):
 
 
 @pytest.mark.flaky(reruns=3)  # why this is the case i am not yet sure.
-@pytest.mark.parametrize(
-    "market,block_number",
-    [
-        ("ETH-28JUL23-1900-C", 28983125),
-        ("ETH-28JUL23-1900-P", 28983125),
-    ],
-)
-def test_client_can_close_short(local_fork, client, market, block_number):
+@pytest.mark.parametrize("market", ACTIVE_MARKETS)
+def test_client_can_close_short(
+    client,
+    market,
+):
     """Test that the otoken can be used to retrieve and redeem.
     flow:
     buy_option -> approve -> close_long
     """
-    local_fork.restart_from_block(block_number)
 
     txn = client.create_order(market, DEFAULT_AMOUNT, side=OrderSide.SELL.value)
     assert txn, "Transaction failed."

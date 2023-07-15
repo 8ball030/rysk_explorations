@@ -30,16 +30,18 @@ def test_fetch_positions(client):
 
 
 @pytest.mark.parametrize(
-    "market,block_number",
+    "market",
     [
-        ("ETH-28JUL23-1900-C", 28983125),
-        ("ETH-28JUL23-1900-P", 28983125),
+        "ETH-28JUL23-1900-C",
+        "ETH-28JUL23-1900-P",
     ],
 )
 @pytest.mark.flaky(reruns=3)  # why this is the case i am not yet sure.
-def test_create_buy_order(local_fork, client, market, block_number):
+def test_create_buy_order(
+    client,
+    market,
+):
     """Test creating a buy order."""
-    local_fork.restart_from_block(block_number)
     order = client.create_order(market, 1, "buy")
     assert order
 
