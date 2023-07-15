@@ -4,6 +4,8 @@ Test the rysk client.
 import pytest
 import responses
 
+from rysk_client.src.constants import ARBITRUM_GOERLI, CHAINS_TO_SUBGRAPH_URL
+
 
 def test_fetch_markets(client):
     """Test fetching markets."""
@@ -22,7 +24,7 @@ def test_fetch_positions(client):
     """Test fetching positions."""
     responses.add(
         responses.POST,
-        "https://api.studio.thegraph.com/query/45686/rysk/version/latest",
+        CHAINS_TO_SUBGRAPH_URL[ARBITRUM_GOERLI],
         json={"data": {"longPositions": [], "shortPositions": []}},
     )
     positions = client.fetch_positions()

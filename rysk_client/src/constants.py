@@ -4,7 +4,7 @@ This file contains all the constants used in the rysk_client package.
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Optional
 
 
 def from_camel_case_to_snake_case(string: str):
@@ -19,7 +19,6 @@ def from_camel_case_to_snake_case(string: str):
 
 DEFAULT_TIMEOUT = 10
 DEFAULT_ENCODING = "utf-8"
-SUBGRAPH_URL = "https://api.studio.thegraph.com/query/45686/rysk/version/latest"
 NULL_ADDRESS = "0x0000000000000000000000000000000000000000"
 NULL_DATA = "0x0000000000000000000000000000000000000000"
 SUPPORTED_LEVERAGES = [1, 1.5, 2, 3]
@@ -79,6 +78,10 @@ class Chain:
     rpc_url: str
     wss_url: str
 
+    def __hash__(self) -> int:
+        """Hash the chain."""
+        return hash(self.chain_id)
+
 
 @dataclass
 class ProtocolDeployment:
@@ -87,6 +90,7 @@ class ProtocolDeployment:
     name: str
     contracts: Dict[str, Contract]
     chain: Chain
+    subgraph_url: Optional[str] = None
 
 
 WS_URL = "wss://quaint-billowing-morning.arbitrum-goerli.discover.quiknode.pro/def6c4c783fc626cb8a07d38f845b76b458e6e84"
@@ -114,6 +118,12 @@ LOCAL_FORK = Chain(
 PROTOCOL_DEPLOYMENTS = {}
 SUPPORTED_CHAINS = [ARBITRUM, ARBITRUM_GOERLI]
 
+
+CHAINS_TO_SUBGRAPH_URL = {
+    ARBITRUM: "https://api.goldsky.com/api/public/project_clhf7zaco0n9j490ce421agn4/subgraphs/arbitrum-one/0.1.17/gn",
+    ARBITRUM_GOERLI: "https://api.goldsky.com/api/public/project_clhf7zaco0n9j490ce421agn4/subgraphs/devey/0.1.17/gn",
+}
+
 for chain in SUPPORTED_CHAINS:
     for name, address in CONTRACT_ADDRESSES[chain.name].items():
         PROTOCOL_DEPLOYMENTS[chain.name] = ProtocolDeployment(
@@ -133,6 +143,7 @@ for chain in SUPPORTED_CHAINS:
                 for name, address in CONTRACT_ADDRESSES[chain.name].items()
             },
             chain=chain,
+            subgraph_url=CHAINS_TO_SUBGRAPH_URL[chain],
         )
 
 

@@ -9,7 +9,8 @@ from typing import Any, Dict, List, Optional
 import web3
 
 from rysk_client.src.collateral import Collateral
-from rysk_client.src.constants import ARBITRUM_GOERLI, Chain
+from rysk_client.src.constants import (ARBITRUM_GOERLI, CHAINS_TO_SUBGRAPH_URL,
+                                       Chain)
 from rysk_client.src.crypto import EthCrypto
 from rysk_client.src.operation_factory import buy, sell
 from rysk_client.src.order_side import OrderSide
@@ -107,7 +108,7 @@ class RyskClient:  # noqa: R0902
             chain=chain,
             verbose=verbose,
         )
-        self.subgraph_client = SubgraphClient()
+        self.subgraph_client = SubgraphClient(CHAINS_TO_SUBGRAPH_URL[chain])
         self._logger.info(
             f"Rysk client initialized and connected to the blockchain at {self.web3_client.web3.provider}"
         )
