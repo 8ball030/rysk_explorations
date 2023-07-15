@@ -4,6 +4,7 @@ This file contains all the constants used in the rysk_client package.
 import os
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Dict
 
 
 def from_camel_case_to_snake_case(string: str):
@@ -84,7 +85,7 @@ class ProtocolDeployment:
     """Protocol deployment dataclass."""
 
     name: str
-    contracts: dict[str, Contract]
+    contracts: Dict[str, Contract]
     chain: Chain
 
 
