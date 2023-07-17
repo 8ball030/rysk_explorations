@@ -383,7 +383,7 @@ class RyskClient:  # noqa: R0902
                 collateral_contract,
                 self.web3_client.option_exchange.address,
                 str(self._crypto.address),
-                collateral_approved + int(amount * 1e18),
+                int(amount * 1e18),
             )
             # we submit and sign the transaction
             result = self._sign_and_sumbit(txn)
@@ -532,7 +532,7 @@ class RyskClient:  # noqa: R0902
         otoken_address = self.web3_client.get_otoken(rysk_option_market.to_series())
 
         operate_tuple = sell(
-            int(acceptable_premium * 0.95 * 1e2),
+            int(acceptable_premium * 0.95),
             owner_address=self._crypto.address,  # pylint: disable=E1120
             exchange_address=self.web3_client.option_exchange.address,
             otoken_address=otoken_address,

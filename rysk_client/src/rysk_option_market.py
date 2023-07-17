@@ -223,13 +223,27 @@ class RyskOptionMarket:  # pylint: disable=too-many-instance-attributes
         result.update(**market_data)
         return result
 
+    @classmethod
+    def from_json(cls, json):
+        """Returns a RyskOptionMarket from a json"""
+        return cls(
+            strike=json["strike"] * HUMAN_NUMBER_FMT,
+            expiration=json["expiration"],
+            is_put=json["optionType"] == "put",
+            active=json["active"],
+            bid=json.get("bid") * HUMAN_NUMBER_FMT_USDC,
+            ask=json.get("ask") * HUMAN_NUMBER_FMT_USDC,
+            dhv=json.get("dhv") * HUMAN_NUMBER_FMT,
+            delta=json.get("delta"),
+        )
+
     def to_series(self):
         """
         creates a json series object compatible with the rysk contracts.
         """
         return {
-            "strike": self.strike,
-            "expiration": self.expiration,
+            "strike": int(self.strike),
+            "expiration": int(self.expiration),
             "isPut": self.is_put,
             "underlying": Collateral.WETH.value,
             "strikeAsset": Collateral.USDC.value,
