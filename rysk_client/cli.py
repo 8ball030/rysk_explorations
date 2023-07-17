@@ -30,7 +30,7 @@ def set_client(ctx):
             "logger": ctx.logger,
         }
         ctx.client = RyskClient(**auth)
-        if not ctx.client.web3_client.web3.is_connected():
+        if not ctx.client.web3_client.web3.isConnected():
             raise ConnectionError("Web3 client not connected.")
     return ctx.client
 

@@ -8,8 +8,7 @@ from typing import Dict, Optional
 
 
 def from_camel_case_to_snake_case(string: str):
-    """
-    Convert a string from camel case to snake case.
+    """Convert a string from camel case to snake case.
     Note: If the string is all uppercase, it will be converted to lowercase.
     """
     if string.isupper():
@@ -102,7 +101,7 @@ ARBITRUM = Chain(
 )
 ARBITRUM_GOERLI = Chain(
     name="arbitrum-goerli",
-    chain_id=421611,
+    chain_id=421613,
     rpc_url="https://arbitrum-goerli.rpc.thirdweb.com",
     wss_url=WS_URL,
 )

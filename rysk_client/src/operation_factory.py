@@ -184,8 +184,8 @@ def sell(
                     "vaultId": 0,
                     "amount": amount,
                     "optionSeries": {
-                        "expiration": rysk_option_market.expiration,
-                        "strike": rysk_option_market.strike,
+                        "expiration": int(rysk_option_market.expiration),
+                        "strike": int(rysk_option_market.strike),
                         "isPut": rysk_option_market.is_put,
                         "underlying": Collateral.WETH.value,
                         "strikeAsset": Collateral.USDC.value,
@@ -193,7 +193,7 @@ def sell(
                         if not rysk_option_market.is_put
                         else Collateral.USDC.value,
                     },
-                    "indexOrAcceptablePremium": int(acceptable_premium * 1e-2),
+                    "indexOrAcceptablePremium": int(acceptable_premium),
                     "data": NULL_DATA,
                 }
             ],
