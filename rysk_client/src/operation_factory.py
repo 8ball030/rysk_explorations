@@ -5,27 +5,13 @@ Rysk Client Operation Manager
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional
 
 from rysk_client.src.action_type import ActionType, RyskActionType
-from rysk_client.src.collateral import Collateral
-from rysk_client.src.constants import (NULL_ADDRESS, NULL_DATA,
+from rysk_client.src.collateral import CollateralFactory
+from rysk_client.src.constants import (EMPTY_SERIES, NULL_ADDRESS, NULL_DATA,
                                        WETH_MULTIPLIER, Chain)
-from rysk_client.src.rysk_option_market import RyskOptionMarket
-
-EMPTY_SERIES = {
-    "expiration": 1,
-    "strike": 1,
-    "isPut": True,
-    "collateral": NULL_ADDRESS,
-    "underlying": NULL_ADDRESS,
-    "strikeAsset": NULL_ADDRESS,
-}
-
-
-def from_wei_to_opyn(amount: int):
-    """Convert amount from wei to opyn."""
-    return int(amount / 10**10)
+from rysk_client.src.rysk_option_market import MarketFactory, RyskOptionMarket
+from rysk_client.src.utils import from_wei_to_opyn
 
 
 class OperationType(Enum):
@@ -43,10 +29,8 @@ class OperationFactory:
 
     def __init__(self, chain: Chain):
         self.chain = chain
-
-    def _get_contract(self, contract: str):
-        """Get the contract address for the given contract name."""
-        print(contract + " " + self.chain.name)
+        self.collateral_factory = CollateralFactory(chain)
+        self.market_factory = MarketFactory(chain)
 
     def buy(
         self,
@@ -68,7 +52,7 @@ class OperationFactory:
                     "asset": NULL_ADDRESS,
                     "vaultId": 0,
                     "amount": 0,
-                    "optionSeries": option_market.to_series(),
+                    "optionSeries": self.market_factory.to_series(option_market),
                     "indexOrAcceptablePremium": 0,
                     "data": NULL_ADDRESS,
                 }
@@ -82,7 +66,7 @@ class OperationFactory:
                 "asset": NULL_ADDRESS,
                 "vaultId": 0,
                 "amount": amount,
-                "optionSeries": option_market.to_series(),
+                "optionSeries": self.market_factory.to_series(option_market),
                 "indexOrAcceptablePremium": acceptable_premium,
                 "data": NULL_ADDRESS,
             }
@@ -128,8 +112,8 @@ class OperationFactory:
         amount: int,
         vault_id: int,
         collateral: int,
+        rysk_option_market: RyskOptionMarket,
         issue_new_vault: bool = False,
-        rysk_option_market: RyskOptionMarket = Optional[None],
     ):
         """Create the operation to sell an option."""
         if rysk_option_market.is_put:
@@ -139,11 +123,11 @@ class OperationFactory:
             strike = rysk_option_market.strike / WETH_MULTIPLIER
             _amount = from_wei_to_opyn(amount) / 1e2
             collateral_amount = int(eth * strike * _amount)
-            collateral = Collateral.USDC.value
+            collateral = self.collateral_factory.USDC
 
         else:
             collateral_amount = amount
-            collateral = Collateral.WETH.value
+            collateral = self.collateral_factory.WETH
 
         required_data = [
             {
@@ -203,11 +187,11 @@ class OperationFactory:
                             "expiration": int(rysk_option_market.expiration),
                             "strike": int(rysk_option_market.strike),
                             "isPut": rysk_option_market.is_put,
-                            "underlying": Collateral.WETH.value,
-                            "strikeAsset": Collateral.USDC.value,
-                            "collateral": Collateral.WETH.value
+                            "underlying": self.collateral_factory.WETH,
+                            "strikeAsset": self.collateral_factory.USDC,
+                            "collateral": self.collateral_factory.WETH
                             if not rysk_option_market.is_put
-                            else Collateral.USDC.value,
+                            else self.collateral_factory.USDC,
                         },
                         "indexOrAcceptablePremium": int(acceptable_premium),
                         "data": NULL_DATA,

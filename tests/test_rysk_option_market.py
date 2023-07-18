@@ -4,7 +4,10 @@ Test the rysk option market class.
 
 import pytest
 
-from rysk_client.src.rysk_option_market import (OptionStrikeDrill,
+from rysk_client.src.collateral import CollateralFactory
+from rysk_client.src.constants import ARBITRUM_GOERLI
+from rysk_client.src.rysk_option_market import (MarketFactory,
+                                                OptionStrikeDrill,
                                                 RyskOptionMarket, TradingSpec)
 
 OPTION_DRILL_DATA = (
@@ -83,5 +86,10 @@ def test_to_series_match():
     """
     rysk_option_market_1 = RyskOptionMarket.from_str("ETH-30JUN23-1800-C")
     rysk_option_market_2 = RyskOptionMarket.from_option_drill(*OPTION_DRILL_DATA)
-
-    assert rysk_option_market_1.to_series() == rysk_option_market_2.to_series()
+    market_factory = MarketFactory(ARBITRUM_GOERLI)
+    collateral_factory = CollateralFactory(ARBITRUM_GOERLI)
+    rysk_option_market_1.collateral = collateral_factory.WETH
+    rysk_option_market_2.collateral = collateral_factory.WETH
+    series_1 = market_factory.to_series(rysk_option_market_1)
+    series_2 = market_factory.to_series(rysk_option_market_2)
+    assert series_1 == series_2

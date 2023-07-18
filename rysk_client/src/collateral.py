@@ -1,31 +1,39 @@
 """
 Collateral supported by the protocol.
 """
-from enum import Enum
+from dataclasses import dataclass
 
-from web3 import Web3
+from rysk_client.src.constants import PROTOCOL_DEPLOYMENTS, Chain
 
 
-class Collateral(Enum):
-    """Collateral supported by the protocol"""
+@dataclass
+class CollateralFactory:
+    """Class to return the collateral enum from the deployment."""
 
-    WETH = Web3.toChecksumAddress("0x3b3a1de07439eeb04492fa64a889ee25a130cdd3")
-    USDC = Web3.toChecksumAddress("0x408c5755b5c7a0a28d851558ea3636cfc5b5b19d")
+    chain: Chain
 
-    @classmethod
-    def is_supported(cls, collateral):
+    @property
+    def WETH(self):  # pylint: disable=invalid-name
+        """Returns the WETH address"""
+        return PROTOCOL_DEPLOYMENTS[self.chain.name].contracts["weth"].address
+
+    @property
+    def USDC(self):  # pylint: disable=invalid-name
+        """Returns the USDC address"""
+        return PROTOCOL_DEPLOYMENTS[self.chain.name].contracts["usdc"].address
+
+    def from_symbol(self, symbol):
+        """Returns the address of the collateral from its symbol"""
+        if symbol.upper() == "WETH":
+            return self.WETH
+        if symbol.upper() == "USDC":
+            return self.USDC
+        raise ValueError(f"Collateral {symbol} not supported")
+
+    def is_supported(self, collateral):
         """Is the sset supported"""
         try:
-            cls.from_symbol(collateral)
+            self.from_symbol(collateral)
         except ValueError:
             return False
         return True
-
-    @classmethod
-    def from_symbol(cls, symbol):
-        """Returns the address of the collateral from its symbol"""
-        if symbol.upper() == "WETH":
-            return cls.WETH
-        if symbol.upper() == "USDC":
-            return cls.USDC
-        raise ValueError(f"Collateral {symbol} not supported")

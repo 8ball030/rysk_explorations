@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 
 import web3
 
-from rysk_client.src.collateral import Collateral
+from rysk_client.src.collateral import CollateralFactory
 from rysk_client.src.constants import (ARBITRUM_GOERLI, CHAINS_TO_SUBGRAPH_URL,
                                        USDC_MULTIPLIER, WETH_MULTIPLIER, Chain)
 from rysk_client.src.crypto import EthCrypto
@@ -16,7 +16,8 @@ from rysk_client.src.operation_factory import OperationFactory
 from rysk_client.src.order_side import OrderSide
 from rysk_client.src.pnl_calculator import PnlCalculator, Trade
 from rysk_client.src.position_side import PositionSide
-from rysk_client.src.rysk_option_market import OptionChain, RyskOptionMarket
+from rysk_client.src.rysk_option_market import (MarketFactory, OptionChain,
+                                                RyskOptionMarket)
 from rysk_client.src.subgraph import SubgraphClient
 from rysk_client.src.utils import get_contract, get_logger
 from rysk_client.web3_client import Web3Client, print_operate_tuple
@@ -111,6 +112,8 @@ class RyskClient:  # noqa: R0902
         )
         self._verbose = verbose
         self.operation_factory = OperationFactory(chain)
+        self.collateral_factory = CollateralFactory(chain)
+        self.market_factory = MarketFactory(chain)
 
     def _sign_and_submit(self, txn, retries=3, backoff=2):
         """
@@ -334,24 +337,25 @@ class RyskClient:  # noqa: R0902
 
         self._logger.info(f"Fetching acceptable premium for {market}")
         rysk_option_market = self.get_market(market)
-        rysk_option_market.collateral = Collateral.from_symbol(collateral_asset)
+        rysk_option_market.collateral = self.collateral_factory.from_symbol(
+            collateral_asset
+        )
         self._logger.info(
             f"Buying {amount} of {market} with {collateral_asset} collateral @ {leverage}x leverage."
         )
         # we first check the approval amount of the collateral asset
-        if not Collateral.is_supported(collateral_asset):
+        if not self.collateral_factory.is_supported(collateral_asset):
             raise ValueError(
                 f"Collateral asset {collateral_asset} is not supported by the protocol."
             )
-        collateral_asset_name = f"{rysk_option_market.collateral.name.lower()}"
         collateral_contract = get_contract(
-            collateral_asset_name, self.web3_client.web3, self.web3_client.chain
+            collateral_asset.lower(), self.web3_client.web3, self.web3_client.chain
         )
         collateral_approved = self.web3_client.is_approved(
             collateral_contract,
             self.web3_client.option_exchange.address,
             str(self._crypto.address),
-            int(amount * 1e18),
+            int(amount * WETH_MULTIPLIER),
         )
         self._logger.info(f"Collateral approved: {collateral_approved}.")
 
@@ -364,13 +368,15 @@ class RyskClient:  # noqa: R0902
                 collateral_contract,
                 self.web3_client.option_exchange.address,
                 str(self._crypto.address),
-                int(amount * 1e18),
+                int(amount * WETH_MULTIPLIER),
             )
             # we submit and sign the transaction
             result = self._sign_and_submit(txn)
             self._logger.info(f"Transaction successful with hash: {result}")
 
-        otoken_address = self.web3_client.get_otoken(rysk_option_market.to_series())
+        series = self.market_factory.to_series(rysk_option_market)
+
+        otoken_address = self.web3_client.get_otoken(series)
         balance = self.web3_client.get_otoken_balance(otoken_address)
         self._logger.info(f"Balance of {otoken_address}: {balance}")
 
@@ -379,7 +385,7 @@ class RyskClient:  # noqa: R0902
         )
         _amount = amount * WETH_MULTIPLIER
         acceptable_premium = self.web3_client.get_options_prices(  # type: ignore
-            rysk_option_market.to_series(),
+            series,
             rysk_option_market.dhv,
             side=OrderSide.BUY.value,
             amount=_amount,
@@ -440,9 +446,23 @@ class RyskClient:  # noqa: R0902
         _amount = amount * WETH_MULTIPLIER
 
         rysk_option_market = self.get_market(market)
+        if rysk_option_market.is_put:
+            rysk_option_market.collateral = self.collateral_factory.USDC
+            amount_to_approve = int(
+                self._option_chain.current_price
+                * amount
+                * (1 + ALLOWED_SLIPPAGE)
+                * WETH_MULTIPLIER
+            )
+            contract = self.web3_client.usdc
+        else:
+            rysk_option_market.collateral = self.collateral_factory.WETH
+            amount_to_approve = int(_amount * (1 + ALLOWED_SLIPPAGE))
+            contract = self.web3_client.settlement_weth
+        series = self.market_factory.to_series(rysk_option_market)
 
         acceptable_premium = self.web3_client.get_options_prices(
-            rysk_option_market.to_series(),
+            series,
             dhv_exposure=rysk_option_market.dhv,
             amount=_amount,
             side=OrderSide.SELL.value,
@@ -452,7 +472,7 @@ class RyskClient:  # noqa: R0902
         self._logger.info(f"Acceptable premium: ${acceptable_premium:.2f}")
 
         user_vaults = self.web3_client.fetch_user_vaults(self._crypto.address)
-        otoken_id = self.web3_client.get_otoken(rysk_option_market.to_series())
+        otoken_id = self.web3_client.get_otoken(series)
         self._logger.info(f"Option Otoken id is {otoken_id}")
 
         issue_new_vault = False
@@ -468,20 +488,6 @@ class RyskClient:  # noqa: R0902
             # we need to use the vault
             vault_id = [f[1] for f in user_vaults].index(otoken_id) + 1
             self._logger.info(f"Using existing vault id user_vaults {vault_id}")
-
-        if rysk_option_market.is_put:
-            collateral_asset = Collateral.USDC
-            amount_to_approve = int(
-                self._option_chain.current_price
-                * amount
-                * (1 + ALLOWED_SLIPPAGE)
-                * WETH_MULTIPLIER
-            )
-            contract = self.web3_client.usdc
-        else:
-            collateral_asset = Collateral.WETH
-            amount_to_approve = int(_amount * (1 + ALLOWED_SLIPPAGE))
-            contract = self.web3_client.settlement_weth
 
         # we check the approval of the amount
         self._logger.info(
@@ -511,7 +517,7 @@ class RyskClient:  # noqa: R0902
             self.web3_client.option_exchange.address,
         ).call()
         self._logger.info(f"Allowance is {allowance}")
-        otoken_address = self.web3_client.get_otoken(rysk_option_market.to_series())
+        otoken_address = self.web3_client.get_otoken(series)
 
         operate_tuple = self.operation_factory.sell(
             int(acceptable_premium * 0.95),
@@ -520,25 +526,13 @@ class RyskClient:  # noqa: R0902
             otoken_address=otoken_address,
             amount=int(_amount),
             vault_id=int(vault_id),
-            collateral=_amount,
+            collateral=int(_amount),
             rysk_option_market=rysk_option_market,
             issue_new_vault=issue_new_vault,
         )
-        if self._verbose:
-            self._logger.info("Operate tuple is:")
-            print_operate_tuple(operate_tuple)
-
-        operate_txn = self.web3_client.option_exchange.functions.operate(
-            operate_tuple
-        ).build_transaction(
-            {
-                **{
-                    "from": self._crypto.address,
-                },
-                **self.web3_client._default_tx_params,  # pylint: disable=W0212
-            }
+        return self.web3_client._operate(  # pylint: disable=protected-access
+            operate_tuple, self.web3_client.option_exchange
         )
-        return operate_txn
 
     def watch_trades(self):
         """Watch trades."""
@@ -566,7 +560,8 @@ class RyskClient:  # noqa: R0902
         """Redeem otoken."""
         self._logger.info(f"Redeeming market {market}...")
         rysk_option_market = RyskOptionMarket.from_str(market)
-        otoken_address = self.web3_client.get_otoken(rysk_option_market.to_series())
+        series = self.market_factory.to_series(rysk_option_market)
+        otoken_address = self.web3_client.get_otoken(series)
         amount = self.web3_client.get_otoken_balance(otoken_address) / 10**8
         return self.redeem_otoken(otoken_address, amount)
 
@@ -581,10 +576,11 @@ class RyskClient:  # noqa: R0902
         """Close long."""
         self._logger.info(f"Closing long {market}...")
         # as we are long, we use usdc as collateral
-        collateral_asset = Collateral.USDC
+        collateral_asset = self.collateral_factory.USDC
         _market = self.get_market(market)
         _market.collateral = collateral_asset
-        otoken_address = self.web3_client.get_otoken(_market.to_series())
+        series = self.market_factory.to_series(_market)
+        otoken_address = self.web3_client.get_otoken(series)
         if size is None:
             _amount = self.web3_client.get_otoken_balance(otoken_address) * 10**10
         else:
@@ -637,7 +633,12 @@ class RyskClient:  # noqa: R0902
         self._logger.info(f"Closing short {market}...")
         # as we are short, we ensure we are covered
         rysk_option_market = self.active_markets[market]
-        otoken_address = self.web3_client.get_otoken(rysk_option_market.to_series())
+        if rysk_option_market.is_put:
+            rysk_option_market.collateral = self.collateral_factory.USDC
+        else:
+            rysk_option_market.collateral = self.collateral_factory.WETH
+        series = self.market_factory.to_series(rysk_option_market)
+        otoken_address = self.web3_client.get_otoken(series)
 
         if size is None:
             raise NotImplementedError(
@@ -649,7 +650,7 @@ class RyskClient:  # noqa: R0902
         acceptable_premium = int(rysk_option_market.bid * (1 + ALLOWED_SLIPPAGE) * size)
 
         user_vaults = self.web3_client.fetch_user_vaults(self._crypto.address)
-        otoken_id = self.web3_client.get_otoken(rysk_option_market.to_series())
+        otoken_id = self.web3_client.get_otoken(series)
         self._logger.info(f"Option Otoken id is {otoken_id}")
 
         positions = [f for f in user_vaults if f[1] == otoken_id]

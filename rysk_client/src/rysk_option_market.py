@@ -7,8 +7,8 @@ from datetime import datetime
 from enum import Enum
 from typing import Dict, List, Optional
 
-from rysk_client.src.collateral import Collateral
-from rysk_client.src.constants import USDC_MULTIPLIER, WETH_MULTIPLIER
+from rysk_client.src.collateral import CollateralFactory
+from rysk_client.src.constants import USDC_MULTIPLIER, WETH_MULTIPLIER, Chain
 
 EXPIRATION_TIME = "08:00:00"
 
@@ -157,7 +157,7 @@ class RyskOptionMarket:  # pylint: disable=too-many-instance-attributes
     ask: Optional[int] = None
     dhv: Optional[int] = None
     delta: Optional[int] = None
-    _collateral: Optional[Collateral] = None
+    _collateral: Optional[str] = None
 
     @classmethod
     def from_series(cls, series):
@@ -236,19 +236,6 @@ class RyskOptionMarket:  # pylint: disable=too-many-instance-attributes
             delta=json.get("delta"),
         )
 
-    def to_series(self):
-        """
-        creates a json series object compatible with the rysk contracts.
-        """
-        return {
-            "strike": int(self.strike),
-            "expiration": int(self.expiration),
-            "isPut": self.is_put,
-            "underlying": Collateral.WETH.value,
-            "strikeAsset": Collateral.USDC.value,
-            "collateral": self.collateral.value,
-        }
-
     @classmethod
     def from_str(cls, name: str):
         """Returns a RyskOptionMarket from a name"""
@@ -267,10 +254,41 @@ class RyskOptionMarket:  # pylint: disable=too-many-instance-attributes
     def collateral(self):
         """Returns the collateral of the option market"""
         if self._collateral is None:
-            return Collateral.USDC if self.is_put else Collateral.WETH
+            raise ValueError("Collateral not set")
         return self._collateral
 
     @collateral.setter
     def collateral(self, collateral):
         """Sets the collateral of the option market"""
         self._collateral = collateral
+
+
+@dataclass
+class MarketFactory:
+    """Class to generate option markets."""
+
+    chain: Chain
+
+    def __init__(self, chain: Chain, covered: bool = True):
+        """
+        Markets factory will generate option markets for the given chain.
+        If covered is True, it will generate markets for the covered options.
+        I.e. for a given strike and expiration, it will generate a call and a put.
+        If called with covered=False, it will generate markets for the naked options.
+        """
+        self.chain = chain
+        self.collateral_factory = CollateralFactory(chain)
+        self._covered = covered
+
+    def to_series(self, rysk_option_market: RyskOptionMarket):
+        """Returns the series of the option market
+        effectively, we are adding the appriate contract addresses to the option market.
+        """
+        return {
+            "strike": int(rysk_option_market.strike),
+            "expiration": int(rysk_option_market.expiration),
+            "isPut": rysk_option_market.is_put,
+            "underlying": self.collateral_factory.WETH,
+            "strikeAsset": self.collateral_factory.USDC,
+            "collateral": rysk_option_market.collateral,
+        }
