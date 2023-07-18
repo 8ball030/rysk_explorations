@@ -340,15 +340,7 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
                 "vaultId": vault_id,
             },
         ]
-        return self.opyn_controller.functions.operate(operate_tuple).build_transaction(
-            {
-                **{
-                    "from": self._crypto.address,  # type: ignore
-                    "nonce": self.web3.eth.get_transaction_count(self._crypto.address),  # type: ignore
-                },
-                **self._default_tx_params,
-            }
-        )
+        return self._operate(operate_tuple, self.opyn_controller)
 
     def redeem_otoken(
         self,
@@ -374,15 +366,8 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
                 "data": NULL_DATA,
             }
         ]
-        return self.opyn_controller.functions.operate(operate_tuple).build_transaction(
-            {
-                **{
-                    "from": self._crypto.address,  # type: ignore
-                    "nonce": self.web3.eth.get_transaction_count(self._crypto.address),  # type: ignore
-                },
-                **self._default_tx_params,
-            }
-        )
+
+        return self._operate(operate_tuple, self.opyn_controller)
 
     def get_otoken_balance(self, otoken_id: str):
         """
@@ -406,7 +391,7 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
             otoken_address=otoken_address,
             amount=int(amount),
         )
-        return self._operate(operate_tuple)
+        return self._operate(operate_tuple, self.option_exchange)
 
     def get_series_info(self, otoken_address: str) -> Dict[str, Any]:
         """
@@ -437,15 +422,16 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
             vault_id=vault_id,
             rysk_option_market=rysk_option_market,
         )
-        return self._operate(operate_tuple)
+        return self._operate(operate_tuple, self.option_exchange)
 
     def _operate(
         self,
         operate_tuple: List[Dict[str, Any]],
+        contract: Contract,
     ):
         if self._verbose:
             print_operate_tuple(operate_tuple)
-        return self.option_exchange.functions.operate(operate_tuple).build_transaction(
+        return contract.functions.operate(operate_tuple).build_transaction(
             {
                 **{
                     "from": self._crypto.address,  # type: ignore
