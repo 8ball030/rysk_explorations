@@ -114,7 +114,7 @@ class RyskClient:  # noqa: R0902
         )
         self._verbose = verbose
 
-    def _sign_and_sumbit(self, txn, retries=3, backoff=2):
+    def _sign_and_submit(self, txn, retries=3, backoff=2):
         """
         Sign and submit transaction.
 
@@ -149,7 +149,7 @@ class RyskClient:  # noqa: R0902
                     f"Error {error} while submitting transaction. Retrying..."
                 )
                 time.sleep(backoff)
-                return self._sign_and_sumbit(
+                return self._sign_and_submit(
                     txn, retries=retries - 1, backoff=backoff * 2
                 )
             raise error
@@ -292,7 +292,7 @@ class RyskClient:  # noqa: R0902
             transaction = self.buy_option(symbol, amount)
         else:
             transaction = self.sell_option(symbol, amount)
-        submitted = self._sign_and_sumbit(transaction)
+        submitted = self._sign_and_submit(transaction)
         self.web3_client.web3.eth.wait_for_transaction_receipt(submitted)
         self._logger.info(f"Submitted transaction with hash: {submitted}")
         return {
@@ -363,7 +363,7 @@ class RyskClient:  # noqa: R0902
                 int(amount * 1e18),
             )
             # we submit and sign the transaction
-            result = self._sign_and_sumbit(txn)
+            result = self._sign_and_submit(txn)
             self._logger.info(f"Transaction successful with hash: {result}")
 
         otoken_address = self.web3_client.get_otoken(rysk_option_market.to_series())
@@ -497,7 +497,7 @@ class RyskClient:  # noqa: R0902
             )
 
             self._logger.debug(f"Approve tx is {approve_tx}")
-            tx_hash = self._sign_and_sumbit(approve_tx)
+            tx_hash = self._sign_and_submit(approve_tx)
             self._logger.info(f"Tx hash is {tx_hash}")
 
         # has allowcance incremented
@@ -549,13 +549,13 @@ class RyskClient:  # noqa: R0902
         """Settle options."""
         self._logger.info(f"Settling vault {vault_id}...")
         txn = self.web3_client.settle_vault(vault_id=vault_id)
-        return self._sign_and_sumbit(txn)
+        return self._sign_and_submit(txn)
 
     def redeem_otoken(self, otoken_id: str, amount: int):
         """Redeem otoken."""
         self._logger.info(f"Redeeming otoken {otoken_id}...")
         txn = self.web3_client.redeem_otoken(otoken_id=otoken_id, amount=amount)
-        return self._sign_and_sumbit(txn)
+        return self._sign_and_submit(txn)
 
     def redeem_market(self, market: str):
         """Redeem otoken."""
@@ -611,7 +611,7 @@ class RyskClient:  # noqa: R0902
                 self._crypto.address,  # type: ignore
                 int(10**8 * _amount),
             )
-            self._sign_and_sumbit(
+            self._sign_and_submit(
                 txn,
             )
 
@@ -623,7 +623,7 @@ class RyskClient:  # noqa: R0902
             amount=_amount,
             otoken_address=self.web3_client.web3.toChecksumAddress(otoken_address),
         )
-        return self._sign_and_sumbit(txn)
+        return self._sign_and_submit(txn)
 
     def close_short(self, market: str, size: float):
         """
@@ -663,4 +663,4 @@ class RyskClient:  # noqa: R0902
             vault_id=vault_id,
             rysk_option_market=rysk_option_market,
         )
-        return self._sign_and_sumbit(txn)
+        return self._sign_and_submit(txn)
