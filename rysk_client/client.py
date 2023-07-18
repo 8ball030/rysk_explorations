@@ -292,32 +292,9 @@ class RyskClient:  # noqa: R0902
             transaction = self.buy_option(symbol, amount)
         else:
             transaction = self.sell_option(symbol, amount)
-        # we can now submit it to the chain;
-        # we can also confirm the otoken balance
-        market = self.get_market(symbol)
-        otoken_address = self.web3_client.get_otoken(market.to_series())
-
-        old_balance = self.web3_client.get_otoken_balance(otoken_address)
-
-        self._logger.info(f"Otken balance: {old_balance}")
-        block_number = self.web3_client.web3.eth.block_number
         submitted = self._sign_and_sumbit(transaction)
-        # block until the transaction is mined
-        wait = 10
-        while self.web3_client.web3.eth.block_number <= block_number:
-            time.sleep(1)
-            wait -= 1
-            if wait == 0:
-                raise TimeoutError("Transaction was not mined in time.")
-
+        self.web3_client.web3.eth.wait_for_transaction_receipt(submitted)
         self._logger.info(f"Submitted transaction with hash: {submitted}")
-        new_balance = self.web3_client.get_otoken_balance(otoken_address)
-        self._logger.info(f"Otken balance: {new_balance}")
-        if new_balance == old_balance and side == OrderSide.BUY.value:
-            self._logger.error(
-                f"Transaction failed to execute. Balance is still {new_balance}"
-            )
-
         return {
             "id": submitted,
             "symbol": symbol,
