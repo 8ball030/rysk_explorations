@@ -18,9 +18,10 @@ from rysk_client.src.collateral import Collateral
 from rysk_client.src.constants import (ARBITRUM_GOERLI, NULL_ADDRESS,
                                        NULL_DATA, Chain)
 from rysk_client.src.crypto import EthCrypto
-from rysk_client.src.operation_factory import close_long, close_short
+from rysk_client.src.operation_factory import OperationFactory
 from rysk_client.src.order import Order
 from rysk_client.src.order_side import OrderSide
+from rysk_client.src.rysk_option_market import RyskOptionMarket
 from rysk_client.src.utils import get_contract, get_logger, get_web3
 
 
@@ -113,6 +114,7 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
         self._processed_tx: deque = deque(maxlen=100)
         self._crypto = crypto
         self._verbose = verbose
+        self._operation_factory = OperationFactory(self.chain)
 
     def get_otoken_contract(self, otoken_address: str) -> Contract:
         """
@@ -398,24 +400,13 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
         """
         Build the transaction to close a long position.
         """
-        operate_tuple = close_long(
+        operate_tuple = self._operation_factory.close_long(
             acceptable_premium=acceptable_premium,
             owner_address=self._crypto.address,  # type: ignore
             otoken_address=otoken_address,
             amount=int(amount),
         )
-        if self._verbose:
-            print_operate_tuple(operate_tuple)
-
-        return self.option_exchange.functions.operate(operate_tuple).build_transaction(
-            {
-                **{
-                    "from": self._crypto.address,  # type: ignore
-                    "nonce": self.web3.eth.get_transaction_count(self._crypto.address),  # type: ignore
-                },
-                **self._default_tx_params,
-            }
-        )
+        return self._operate(operate_tuple)
 
     def get_series_info(self, otoken_address: str) -> Dict[str, Any]:
         """
@@ -429,14 +420,14 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
         amount: int,
         otoken_address: str,
         collateral_amount: int,
-        collateral_asset: str,
+        collateral_asset: Collateral,
         vault_id: int,
-        rysk_option_market: str,
+        rysk_option_market: RyskOptionMarket,
     ):
         """
         Build the transaction to close a short position.
         """
-        operate_tuple = close_short(
+        operate_tuple = self._operation_factory.close_short(
             acceptable_premium=acceptable_premium,
             owner_address=self._crypto.address,  # type: ignore
             otoken_address=self.web3.toChecksumAddress(otoken_address),
@@ -446,9 +437,14 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
             vault_id=vault_id,
             rysk_option_market=rysk_option_market,
         )
+        return self._operate(operate_tuple)
+
+    def _operate(
+        self,
+        operate_tuple: List[Dict[str, Any]],
+    ):
         if self._verbose:
             print_operate_tuple(operate_tuple)
-
         return self.option_exchange.functions.operate(operate_tuple).build_transaction(
             {
                 **{

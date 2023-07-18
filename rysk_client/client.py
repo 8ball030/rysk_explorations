@@ -12,7 +12,7 @@ from rysk_client.src.collateral import Collateral
 from rysk_client.src.constants import (ARBITRUM_GOERLI, CHAINS_TO_SUBGRAPH_URL,
                                        Chain)
 from rysk_client.src.crypto import EthCrypto
-from rysk_client.src.operation_factory import buy, sell
+from rysk_client.src.operation_factory import OperationFactory
 from rysk_client.src.order_side import OrderSide
 from rysk_client.src.pnl_calculator import PnlCalculator, Trade
 from rysk_client.src.position_side import PositionSide
@@ -113,6 +113,7 @@ class RyskClient:  # noqa: R0902
             f"Rysk client initialized and connected to the blockchain at {self.web3_client.web3.provider}"
         )
         self._verbose = verbose
+        self.operation_factory = OperationFactory(chain)
 
     def _sign_and_submit(self, txn, retries=3, backoff=2):
         """
@@ -387,7 +388,7 @@ class RyskClient:  # noqa: R0902
         # we check if we need to issue the option
         issuance_required = self.is_issuance_required(otoken_address)
 
-        operate_tuple = buy(
+        operate_tuple = self.operation_factory.buy(
             int(acceptable_premium),
             owner_address=self._crypto.address,  # pylint: disable=E1120
             amount=int(_amount),
@@ -508,7 +509,7 @@ class RyskClient:  # noqa: R0902
         self._logger.info(f"Allowance is {allowance}")
         otoken_address = self.web3_client.get_otoken(rysk_option_market.to_series())
 
-        operate_tuple = sell(
+        operate_tuple = self.operation_factory.sell(
             int(acceptable_premium * 0.95),
             owner_address=self._crypto.address,  # pylint: disable=E1120
             exchange_address=self.web3_client.option_exchange.address,

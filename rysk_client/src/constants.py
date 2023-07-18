@@ -149,3 +149,6 @@ for chain in SUPPORTED_CHAINS:
 CHAIN_ID_TO_DEPLOYMENT = {
     deploy.chain.chain_id: deploy for deploy in PROTOCOL_DEPLOYMENTS.values()
 }
+
+WETH_MULTIPLIER = 1e18
+USDC_MULTIPLIER = 1e6
