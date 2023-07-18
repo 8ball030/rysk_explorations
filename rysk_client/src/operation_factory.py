@@ -3,64 +3,15 @@ Rysk Client Operation Manager
 """
 
 
+from dataclasses import dataclass
 from enum import Enum
+from typing import Optional
 
 from rysk_client.src.action_type import ActionType, RyskActionType
 from rysk_client.src.collateral import Collateral
-from rysk_client.src.constants import NULL_ADDRESS, NULL_DATA
+from rysk_client.src.constants import (NULL_ADDRESS, NULL_DATA,
+                                       WETH_MULTIPLIER, Chain)
 from rysk_client.src.rysk_option_market import RyskOptionMarket
-
-
-class OperationType(Enum):
-    """Distinguish between operations for the rysk and opyn contracts."""
-
-    OPYN_ACTION = 0
-    RYSK_ACTION = 1
-
-
-def buy(
-    acceptable_premium: int,
-    owner_address: str,
-    amount: int,
-    option_market: RyskOptionMarket,
-    issuance_required: bool = False,
-):
-    """Create the operation to buy an option."""
-    operations = []
-
-    if issuance_required:
-        operations.append(
-            {
-                "actionType": RyskActionType.ISSUE.value,
-                "owner": NULL_ADDRESS,
-                "secondAddress": NULL_ADDRESS,
-                "asset": NULL_ADDRESS,
-                "vaultId": 0,
-                "amount": 0,
-                "optionSeries": option_market.to_series(),
-                "indexOrAcceptablePremium": 0,
-                "data": NULL_ADDRESS,
-            }
-        )
-
-    operations.append(
-        {
-            "actionType": RyskActionType.BUY_OPTION.value,
-            "owner": NULL_ADDRESS,
-            "secondAddress": owner_address,
-            "asset": NULL_ADDRESS,
-            "vaultId": 0,
-            "amount": amount,
-            "optionSeries": option_market.to_series(),
-            "indexOrAcceptablePremium": acceptable_premium,
-            "data": NULL_ADDRESS,
-        }
-    )
-    return {
-        "operation": OperationType.RYSK_ACTION.value,
-        "operationQueue": operations,
-    }
-
 
 EMPTY_SERIES = {
     "expiration": 1,
@@ -72,199 +23,264 @@ EMPTY_SERIES = {
 }
 
 
-def close_long(
-    acceptable_premium: int,
-    owner_address: str,
-    otoken_address: str,
-    amount: int,
-):
-    """Create the operation to buy an option."""
-    return [
-        {
-            "operation": OperationType.RYSK_ACTION.value,
-            "operationQueue": [
-                {
-                    "actionType": RyskActionType.CLOSE_OPTION.value,
-                    "owner": NULL_ADDRESS,
-                    "secondAddress": owner_address,
-                    "asset": otoken_address,
-                    "vaultId": 0,
-                    "amount": amount,
-                    "optionSeries": EMPTY_SERIES,
-                    "indexOrAcceptablePremium": acceptable_premium,
-                    "data": NULL_DATA,
-                }
-            ],
-        }
-    ]
-
-
 def from_wei_to_opyn(amount: int):
     """Convert amount from wei to opyn."""
     return int(amount / 10**10)
 
 
-def sell(
-    acceptable_premium: int,
-    owner_address: str,
-    exchange_address: str,
-    otoken_address: str,
-    amount: int,
-    vault_id: int,
-    collateral: int,
-    issue_new_vault: bool = False,
-    rysk_option_market: RyskOptionMarket = None,
-):
-    """Create the operation to sell an option."""
-    if rysk_option_market.is_put:
-        # here we retrieve how much collateral we get for the amount of options
-        # we basically need strike * amount
-        eth = collateral / 1e18
-        strike = rysk_option_market.strike / 1e18
-        _amount = from_wei_to_opyn(amount) / 1e2
-        collateral_amount = int(eth * strike * _amount)
-        collateral = Collateral.USDC.value
+class OperationType(Enum):
+    """Distinguish between operations for the rysk and opyn contracts."""
 
-    else:
-        collateral_amount = amount
-        collateral = Collateral.WETH.value
+    OPYN_ACTION = 0
+    RYSK_ACTION = 1
 
-    required_data = [
-        {
-            "actionType": ActionType.DEPOSIT_COLLATERAL.value,
-            "owner": owner_address,
-            "secondAddress": exchange_address,
-            "asset": collateral,
-            "vaultId": vault_id,
-            "amount": collateral_amount,
-            "optionSeries": EMPTY_SERIES,
-            "indexOrAcceptablePremium": 0,
-            "data": NULL_DATA,
-        },
-        {
-            "actionType": ActionType.MINT_SHORT_OPTION.value,
-            "owner": owner_address,
-            "secondAddress": exchange_address,
-            "asset": otoken_address,
-            "vaultId": vault_id,
-            "amount": from_wei_to_opyn(amount),
-            "optionSeries": EMPTY_SERIES,
-            "indexOrAcceptablePremium": 0,
-            "data": NULL_DATA,
-        },
-    ]
-    if issue_new_vault:
-        # we need to open a vault
-        required_data = [
+
+@dataclass
+class OperationFactory:
+    """Create operations for the rysk and opyn contracts."""
+
+    chain: Chain
+
+    def __init__(self, chain: Chain):
+        self.chain = chain
+
+    def _get_contract(self, contract: str):
+        """Get the contract address for the given contract name."""
+        print(contract + " " + self.chain.name)
+
+    def buy(
+        self,
+        acceptable_premium: int,
+        owner_address: str,
+        amount: int,
+        option_market: RyskOptionMarket,
+        issuance_required: bool = False,
+    ):
+        """Create the operation to buy an option."""
+        operations = []
+
+        if issuance_required:
+            operations.append(
+                {
+                    "actionType": RyskActionType.ISSUE.value,
+                    "owner": NULL_ADDRESS,
+                    "secondAddress": NULL_ADDRESS,
+                    "asset": NULL_ADDRESS,
+                    "vaultId": 0,
+                    "amount": 0,
+                    "optionSeries": option_market.to_series(),
+                    "indexOrAcceptablePremium": 0,
+                    "data": NULL_ADDRESS,
+                }
+            )
+
+        operations.append(
             {
-                "actionType": ActionType.OPEN_VAULT.value,
-                "owner": owner_address,
+                "actionType": RyskActionType.BUY_OPTION.value,
+                "owner": NULL_ADDRESS,
                 "secondAddress": owner_address,
                 "asset": NULL_ADDRESS,
+                "vaultId": 0,
+                "amount": amount,
+                "optionSeries": option_market.to_series(),
+                "indexOrAcceptablePremium": acceptable_premium,
+                "data": NULL_ADDRESS,
+            }
+        )
+        return {
+            "operation": OperationType.RYSK_ACTION.value,
+            "operationQueue": operations,
+        }
+
+    def close_long(
+        self,
+        acceptable_premium: int,
+        owner_address: str,
+        otoken_address: str,
+        amount: int,
+    ):
+        """Create the operation to buy an option."""
+        return [
+            {
+                "operation": OperationType.RYSK_ACTION.value,
+                "operationQueue": [
+                    {
+                        "actionType": RyskActionType.CLOSE_OPTION.value,
+                        "owner": NULL_ADDRESS,
+                        "secondAddress": owner_address,
+                        "asset": otoken_address,
+                        "vaultId": 0,
+                        "amount": amount,
+                        "optionSeries": EMPTY_SERIES,
+                        "indexOrAcceptablePremium": acceptable_premium,
+                        "data": NULL_DATA,
+                    }
+                ],
+            }
+        ]
+
+    def sell(
+        self,
+        acceptable_premium: int,
+        owner_address: str,
+        exchange_address: str,
+        otoken_address: str,
+        amount: int,
+        vault_id: int,
+        collateral: int,
+        issue_new_vault: bool = False,
+        rysk_option_market: RyskOptionMarket = Optional[None],
+    ):
+        """Create the operation to sell an option."""
+        if rysk_option_market.is_put:
+            # here we retrieve how much collateral we get for the amount of options
+            # we basically need strike * amount
+            eth = collateral / WETH_MULTIPLIER
+            strike = rysk_option_market.strike / WETH_MULTIPLIER
+            _amount = from_wei_to_opyn(amount) / 1e2
+            collateral_amount = int(eth * strike * _amount)
+            collateral = Collateral.USDC.value
+
+        else:
+            collateral_amount = amount
+            collateral = Collateral.WETH.value
+
+        required_data = [
+            {
+                "actionType": ActionType.DEPOSIT_COLLATERAL.value,
+                "owner": owner_address,
+                "secondAddress": exchange_address,
+                "asset": collateral,
                 "vaultId": vault_id,
-                "amount": 0,
+                "amount": collateral_amount,
                 "optionSeries": EMPTY_SERIES,
                 "indexOrAcceptablePremium": 0,
                 "data": NULL_DATA,
-            }
-        ] + required_data
-    return [
-        {
-            "operation": OperationType.OPYN_ACTION.value,
-            "operationQueue": required_data,
-        },
-        {
-            "operation": OperationType.RYSK_ACTION.value,
-            "operationQueue": [
+            },
+            {
+                "actionType": ActionType.MINT_SHORT_OPTION.value,
+                "owner": owner_address,
+                "secondAddress": exchange_address,
+                "asset": otoken_address,
+                "vaultId": vault_id,
+                "amount": from_wei_to_opyn(amount),
+                "optionSeries": EMPTY_SERIES,
+                "indexOrAcceptablePremium": 0,
+                "data": NULL_DATA,
+            },
+        ]
+        if issue_new_vault:
+            # we need to open a vault
+            required_data = [
                 {
-                    "actionType": RyskActionType.SELL_OPTION.value,
-                    "owner": NULL_ADDRESS,
+                    "actionType": ActionType.OPEN_VAULT.value,
+                    "owner": owner_address,
                     "secondAddress": owner_address,
                     "asset": NULL_ADDRESS,
-                    "vaultId": 0,
-                    "amount": amount,
-                    "optionSeries": {
-                        "expiration": int(rysk_option_market.expiration),
-                        "strike": int(rysk_option_market.strike),
-                        "isPut": rysk_option_market.is_put,
-                        "underlying": Collateral.WETH.value,
-                        "strikeAsset": Collateral.USDC.value,
-                        "collateral": Collateral.WETH.value
-                        if not rysk_option_market.is_put
-                        else Collateral.USDC.value,
+                    "vaultId": vault_id,
+                    "amount": 0,
+                    "optionSeries": EMPTY_SERIES,
+                    "indexOrAcceptablePremium": 0,
+                    "data": NULL_DATA,
+                }
+            ] + required_data
+        return [
+            {
+                "operation": OperationType.OPYN_ACTION.value,
+                "operationQueue": required_data,
+            },
+            {
+                "operation": OperationType.RYSK_ACTION.value,
+                "operationQueue": [
+                    {
+                        "actionType": RyskActionType.SELL_OPTION.value,
+                        "owner": NULL_ADDRESS,
+                        "secondAddress": owner_address,
+                        "asset": NULL_ADDRESS,
+                        "vaultId": 0,
+                        "amount": amount,
+                        "optionSeries": {
+                            "expiration": int(rysk_option_market.expiration),
+                            "strike": int(rysk_option_market.strike),
+                            "isPut": rysk_option_market.is_put,
+                            "underlying": Collateral.WETH.value,
+                            "strikeAsset": Collateral.USDC.value,
+                            "collateral": Collateral.WETH.value
+                            if not rysk_option_market.is_put
+                            else Collateral.USDC.value,
+                        },
+                        "indexOrAcceptablePremium": int(acceptable_premium),
+                        "data": NULL_DATA,
+                    }
+                ],
+            },
+        ]
+
+    def close_short(
+        self,
+        acceptable_premium: int,
+        owner_address: str,
+        otoken_address: str,
+        amount: int,
+        collateral_amount: int,
+        collateral_asset: str,
+        vault_id: int,
+        rysk_option_market: RyskOptionMarket,
+    ):
+        """
+        Create the operation to close a short options
+        """
+        if rysk_option_market.is_put:
+            # here we retrieve how much collateral we get for the amount of options
+            # we basically need strike * amount
+            eth = collateral_amount / WETH_MULTIPLIER
+            strike = rysk_option_market.strike / WETH_MULTIPLIER
+            _amount = from_wei_to_opyn(amount) / 1e2
+            collateral_amount = int(eth * strike * _amount)
+
+        tx_data = [
+            {
+                "operation": OperationType.RYSK_ACTION.value,
+                "operationQueue": [
+                    {
+                        "actionType": RyskActionType.BUY_OPTION.value,
+                        "owner": NULL_ADDRESS,
+                        "secondAddress": owner_address,
+                        "asset": otoken_address,
+                        "vaultId": 0,
+                        "amount": amount,
+                        "optionSeries": EMPTY_SERIES,
+                        "indexOrAcceptablePremium": acceptable_premium,
+                        "data": NULL_DATA,
+                    }
+                ],
+            },
+            {
+                "operation": OperationType.OPYN_ACTION.value,
+                "operationQueue": [
+                    {
+                        "actionType": ActionType.BURN_SHORT_OPTION.value,
+                        "owner": owner_address,
+                        "secondAddress": owner_address,
+                        "asset": otoken_address,
+                        "vaultId": vault_id,
+                        "amount": from_wei_to_opyn(amount),
+                        "optionSeries": EMPTY_SERIES,
+                        "indexOrAcceptablePremium": 0,
+                        "data": NULL_DATA,
                     },
-                    "indexOrAcceptablePremium": int(acceptable_premium),
-                    "data": NULL_DATA,
-                }
-            ],
-        },
-    ]
-
-
-def close_short(
-    acceptable_premium: int,
-    owner_address: str,
-    otoken_address: str,
-    amount: int,
-    collateral_amount: int,
-    collateral_asset: str,
-    vault_id: int,
-    rysk_option_market: RyskOptionMarket,
-):
-    """
-    Create the operation to close a short options
-    """
-    if rysk_option_market.is_put:
-        # here we retrieve how much collateral we get for the amount of options
-        # we basically need strike * amount
-        eth = collateral_amount / 1e18
-        strike = rysk_option_market.strike / 1e18
-        _amount = from_wei_to_opyn(amount) / 1e2
-        collateral_amount = int(eth * strike * _amount)
-
-    tx_data = [
-        {
-            "operation": OperationType.RYSK_ACTION.value,
-            "operationQueue": [
-                {
-                    "actionType": RyskActionType.BUY_OPTION.value,
-                    "owner": NULL_ADDRESS,
-                    "secondAddress": owner_address,
-                    "asset": otoken_address,
-                    "vaultId": 0,
-                    "amount": amount,
-                    "optionSeries": EMPTY_SERIES,
-                    "indexOrAcceptablePremium": acceptable_premium,
-                    "data": NULL_DATA,
-                }
-            ],
-        },
-        {
-            "operation": OperationType.OPYN_ACTION.value,
-            "operationQueue": [
-                {
-                    "actionType": ActionType.BURN_SHORT_OPTION.value,
-                    "owner": owner_address,
-                    "secondAddress": owner_address,
-                    "asset": otoken_address,
-                    "vaultId": vault_id,
-                    "amount": from_wei_to_opyn(amount),
-                    "optionSeries": EMPTY_SERIES,
-                    "indexOrAcceptablePremium": 0,
-                    "data": NULL_DATA,
-                },
-                {
-                    "actionType": ActionType.WITHDRAW_COLLATERAL.value,
-                    "owner": owner_address,
-                    "secondAddress": owner_address,
-                    "asset": collateral_asset,
-                    "vaultId": vault_id,
-                    "amount": collateral_amount,
-                    "optionSeries": EMPTY_SERIES,
-                    "indexOrAcceptablePremium": 0,
-                    "data": NULL_DATA,
-                },
-            ],
-        },
-    ]
-    return tx_data
+                    {
+                        "actionType": ActionType.WITHDRAW_COLLATERAL.value,
+                        "owner": owner_address,
+                        "secondAddress": owner_address,
+                        "asset": collateral_asset,
+                        "vaultId": vault_id,
+                        "amount": collateral_amount,
+                        "optionSeries": EMPTY_SERIES,
+                        "indexOrAcceptablePremium": 0,
+                        "data": NULL_DATA,
+                    },
+                ],
+            },
+        ]
+        return tx_data

@@ -10,9 +10,9 @@ import web3
 
 from rysk_client.src.collateral import Collateral
 from rysk_client.src.constants import (ARBITRUM_GOERLI, CHAINS_TO_SUBGRAPH_URL,
-                                       Chain)
+                                       USDC_MULTIPLIER, WETH_MULTIPLIER, Chain)
 from rysk_client.src.crypto import EthCrypto
-from rysk_client.src.operation_factory import buy, sell
+from rysk_client.src.operation_factory import OperationFactory
 from rysk_client.src.order_side import OrderSide
 from rysk_client.src.pnl_calculator import PnlCalculator, Trade
 from rysk_client.src.position_side import PositionSide
@@ -20,9 +20,6 @@ from rysk_client.src.rysk_option_market import OptionChain, RyskOptionMarket
 from rysk_client.src.subgraph import SubgraphClient
 from rysk_client.src.utils import get_contract, get_logger
 from rysk_client.web3_client import Web3Client, print_operate_tuple
-
-PRICE_DEVISOR = 1_000_000_000_000_000_000
-EXPOSURE_DEVISOR = 1_000_000_000_000_000_000
 
 ALLOWED_SLIPPAGE = 0.15
 
@@ -56,7 +53,7 @@ def to_human_format(row):
     month_code = row["expiration_datetime"].strftime("%b").upper()
     day = row["expiration_datetime"].strftime("%d")
     year = str(row["expiration_datetime"].year)[2:]
-    strike_price = str(int(int(row["strike"]) / PRICE_DEVISOR))
+    strike_price = str(int(int(row["strike"]) / WETH_MULTIPLIER))
 
     return f"ETH-{day}{month_code}{year}-{strike_price}-{'P' if row['isPut'] else 'C'}"
 
@@ -113,6 +110,7 @@ class RyskClient:  # noqa: R0902
             f"Rysk client initialized and connected to the blockchain at {self.web3_client.web3.provider}"
         )
         self._verbose = verbose
+        self.operation_factory = OperationFactory(chain)
 
     def _sign_and_submit(self, txn, retries=3, backoff=2):
         """
@@ -239,11 +237,17 @@ class RyskClient:  # noqa: R0902
         pnl_calculator = PnlCalculator()
 
         buys = [
-            Trade(int(order["amount"]) / 1e18, total_cost=int(order["premium"]) / -1e6)
+            Trade(
+                int(order["amount"]) / WETH_MULTIPLIER,
+                total_cost=int(order["premium"]) / USDC_MULTIPLIER,
+            )
             for order in position["optionsBoughtTransactions"]
         ]
         sells = [
-            Trade(-int(order["amount"]) / 1e18, total_cost=-int(order["premium"]) / 1e6)
+            Trade(
+                -int(order["amount"]) / WETH_MULTIPLIER,
+                total_cost=-int(order["premium"]) / USDC_MULTIPLIER,
+            )
             for order in position["optionsSoldTransactions"]
         ]
 
@@ -373,7 +377,7 @@ class RyskClient:  # noqa: R0902
         self._logger.info(
             f"Fetching market data for {market}. Otoken address: {otoken_address}"
         )
-        _amount = amount * 1_000_000_000_000_000_000
+        _amount = amount * WETH_MULTIPLIER
         acceptable_premium = self.web3_client.get_options_prices(  # type: ignore
             rysk_option_market.to_series(),
             rysk_option_market.dhv,
@@ -381,13 +385,14 @@ class RyskClient:  # noqa: R0902
             amount=_amount,
         )  # pylint: disable=E1120
 
-        # we format 2 decimal places
-        self._logger.info(f"Acceptable premium: ${acceptable_premium / 1e6:.2f}")
+        self._logger.info(
+            f"Acceptable premium: ${acceptable_premium / USDC_MULTIPLIER:.2f}"
+        )
 
         # we check if we need to issue the option
         issuance_required = self.is_issuance_required(otoken_address)
 
-        operate_tuple = buy(
+        operate_tuple = self.operation_factory.buy(
             int(acceptable_premium),
             owner_address=self._crypto.address,  # pylint: disable=E1120
             amount=int(_amount),
@@ -432,7 +437,7 @@ class RyskClient:  # noqa: R0902
         if not self._markets:
             self._logger.info("Fetching Tickers.")
             self.fetch_tickers()
-        _amount = amount * 1e18
+        _amount = amount * WETH_MULTIPLIER
 
         rysk_option_market = self.get_market(market)
 
@@ -470,7 +475,7 @@ class RyskClient:  # noqa: R0902
                 self._option_chain.current_price
                 * amount
                 * (1 + ALLOWED_SLIPPAGE)
-                * 1e18
+                * WETH_MULTIPLIER
             )
             contract = self.web3_client.usdc
         else:
@@ -480,7 +485,7 @@ class RyskClient:  # noqa: R0902
 
         # we check the approval of the amount
         self._logger.info(
-            f"Checking approval of {amount_to_approve / 1e18} of {collateral_asset}"
+            f"Checking approval of {amount_to_approve / WETH_MULTIPLIER} of {collateral_asset}"
         )
         allowance = contract.functions.allowance(
             self._crypto.address,
@@ -508,7 +513,7 @@ class RyskClient:  # noqa: R0902
         self._logger.info(f"Allowance is {allowance}")
         otoken_address = self.web3_client.get_otoken(rysk_option_market.to_series())
 
-        operate_tuple = sell(
+        operate_tuple = self.operation_factory.sell(
             int(acceptable_premium * 0.95),
             owner_address=self._crypto.address,  # pylint: disable=E1120
             exchange_address=self.web3_client.option_exchange.address,
@@ -583,7 +588,7 @@ class RyskClient:  # noqa: R0902
         if size is None:
             _amount = self.web3_client.get_otoken_balance(otoken_address) * 10**10
         else:
-            _amount = size * 1e18
+            _amount = size * WETH_MULTIPLIER
         if _market.name not in self.active_markets:
             raise ValueError(f"{market} is not an active market...")
         acceptable_premium = int(_market.ask * (1 - ALLOWED_SLIPPAGE))
@@ -638,7 +643,7 @@ class RyskClient:  # noqa: R0902
             raise NotImplementedError(
                 "Closing short with no size is not implemented yet"
             )
-        _amount = size * 1e18
+        _amount = size * WETH_MULTIPLIER
         if rysk_option_market.name not in self.active_markets:
             raise ValueError(f"{market} is not an active market...")
         acceptable_premium = int(rysk_option_market.bid * (1 + ALLOWED_SLIPPAGE) * size)
