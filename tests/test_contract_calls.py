@@ -10,8 +10,10 @@ import requests
 from docker import DockerClient
 from docker.models.containers import Container
 
+from rysk_client.src.collateral import CollateralFactory
+from rysk_client.src.constants import ARBITRUM_GOERLI
 from rysk_client.src.order_side import OrderSide
-from rysk_client.src.rysk_option_market import RyskOptionMarket
+from rysk_client.src.rysk_option_market import MarketFactory, RyskOptionMarket
 from tests.constants import DEFAULT_FORK_BLOCK_NUMBER
 
 MARKETS = [
@@ -163,7 +165,9 @@ def test_redeems_o_token(client):
 def test_retieve_and_redeem(market, amount, client):
     """Test that the otoken can be used to retrieve and redeem."""
     rysk_option_market = RyskOptionMarket.from_str(market)
-    otoken_address = client.web3_client.get_otoken(rysk_option_market.to_series())
+    market_factory = MarketFactory(ARBITRUM_GOERLI)
+    series = market_factory.to_series(rysk_option_market)
+    otoken_address = client.web3_client.get_otoken(series)
     result = client.redeem_otoken(otoken_address, amount)
     assert result, "Transaction failed."
 
@@ -216,7 +220,11 @@ def test_client_can_buy_differing_amounts(client, market, amount):
 def test_get_otoken_address(client, market):
     """Test that the otoken can be used to retrieve and redeem."""
     rysk_option_market = RyskOptionMarket.from_str(market)
-    otoken_address = client.web3_client.get_otoken(rysk_option_market.to_series())
+    market_factory = MarketFactory(ARBITRUM_GOERLI)
+    collateral_factory = CollateralFactory(ARBITRUM_GOERLI)
+    rysk_option_market.collateral = collateral_factory.USDC
+    series = market_factory.to_series(rysk_option_market)
+    otoken_address = client.web3_client.get_otoken(series)
     assert otoken_address, "Otoken address is None."
 
 

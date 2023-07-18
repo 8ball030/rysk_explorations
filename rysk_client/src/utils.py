@@ -4,9 +4,11 @@ Helper functions for the rysk_client package.
 import json
 import logging
 import sys
+from copy import deepcopy
 from dataclasses import asdict
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
+from rich import print_json
 from rich.console import Console
 from rich.logging import RichHandler
 from rich.table import Table
@@ -14,6 +16,11 @@ from web3 import Web3
 
 from rysk_client.src.constants import (ARBITRUM_GOERLI, DEFAULT_ENCODING,
                                        PROTOCOL_DEPLOYMENTS)
+
+
+def from_wei_to_opyn(amount: int):
+    """Convert amount from wei to opyn."""
+    return int(amount / 10**10)
 
 
 def get_logger():
@@ -84,3 +91,36 @@ def render_table(title: str, data, cols: Optional[List[str]] = None):
         table.add_row(*[str(row.get(column, "")) for column in columns])
     console = Console()
     console.print(table)
+
+
+def print_operate_tuple(operate_tuple: List[Dict[str, Any]]):
+    """
+    Ensure that the operate tuple is formated ina manner compatible with
+    tenderly's api.
+    print it using rich.
+    """
+    display_tuple = deepcopy(operate_tuple)
+    keys_to_stringify = [
+        "strike",
+        "amount",
+        "indexOrAcceptablePremium",
+        "vaultId",
+        "actionType",
+    ]
+
+    def stringify_json(json_data: Any):
+        """
+        Recursively stringify json data.
+        """
+        if isinstance(json_data, dict):
+            for key, value in json_data.items():
+                if key in keys_to_stringify:
+                    json_data[key] = str(value)
+                else:
+                    stringify_json(value)
+        elif isinstance(json_data, list):
+            for value in json_data:
+                stringify_json(value)
+
+    stringify_json(display_tuple)
+    print_json(data=display_tuple)

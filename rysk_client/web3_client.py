@@ -4,17 +4,15 @@ Web3 client for RyskFinance.
 import json
 import logging
 from collections import deque
-from copy import deepcopy
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 
 import websocket
-from rich import print_json
 from web3 import HTTPProvider
 from web3.contract import Contract
 
 from rysk_client.src.action_type import ActionType
-from rysk_client.src.collateral import Collateral
+from rysk_client.src.collateral import CollateralFactory
 from rysk_client.src.constants import (ARBITRUM_GOERLI, NULL_ADDRESS,
                                        NULL_DATA, Chain)
 from rysk_client.src.crypto import EthCrypto
@@ -22,40 +20,8 @@ from rysk_client.src.operation_factory import OperationFactory
 from rysk_client.src.order import Order
 from rysk_client.src.order_side import OrderSide
 from rysk_client.src.rysk_option_market import RyskOptionMarket
-from rysk_client.src.utils import get_contract, get_logger, get_web3
-
-
-def print_operate_tuple(operate_tuple: List[Dict[str, Any]]):
-    """
-    Ensure that the operate tuple is formated ina manner compatible with
-    tenderly's api.
-    print it using rich.
-    """
-    display_tuple = deepcopy(operate_tuple)
-    keys_to_stringify = [
-        "strike",
-        "amount",
-        "indexOrAcceptablePremium",
-        "vaultId",
-        "actionType",
-    ]
-
-    def stringify_json(json_data: Any):
-        """
-        Recursively stringify json data.
-        """
-        if isinstance(json_data, dict):
-            for key, value in json_data.items():
-                if key in keys_to_stringify:
-                    json_data[key] = str(value)
-                else:
-                    stringify_json(value)
-        elif isinstance(json_data, list):
-            for value in json_data:
-                stringify_json(value)
-
-    stringify_json(display_tuple)
-    print_json(data=display_tuple)
+from rysk_client.src.utils import (get_contract, get_logger, get_web3,
+                                   print_operate_tuple)
 
 
 class Balances(Enum):
@@ -115,6 +81,7 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
         self._crypto = crypto
         self._verbose = verbose
         self._operation_factory = OperationFactory(self.chain)
+        self._collateral_factory = CollateralFactory(self.chain)
 
     def get_otoken_contract(self, otoken_address: str) -> Contract:
         """
@@ -140,7 +107,7 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
         if side not in ["buy", "sell"]:
             raise ValueError("Side must be buy or sell")
 
-        if not Collateral.is_supported(collateral):
+        if not self._collateral_factory.is_supported(collateral):
             raise TypeError(f"Collateral {collateral} is not supported")
         # here we call the contract functions
 
@@ -148,9 +115,9 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
             int(option_data["expiration"]),
             int(option_data["strike"]),
             bool(option_data["isPut"]),
-            Collateral.from_symbol(collateral).value,
-            Collateral.from_symbol(strike_asset).value,
-            Collateral.from_symbol(strike_asset).value,
+            self._collateral_factory.from_symbol(collateral),
+            self._collateral_factory.from_symbol(strike_asset),
+            self._collateral_factory.from_symbol(strike_asset),
         )
 
         try:
@@ -317,8 +284,8 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
         collateral: address Collateral asset address
         """
         arguments = (
-            Collateral.WETH.value,
-            Collateral.USDC.value,
+            self._collateral_factory.WETH,
+            self._collateral_factory.USDC,
             series["expiration"],
             series["isPut"],
             series["strike"],
@@ -405,7 +372,7 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
         amount: int,
         otoken_address: str,
         collateral_amount: int,
-        collateral_asset: Collateral,
+        collateral_asset: str,
         vault_id: int,
         rysk_option_market: RyskOptionMarket,
     ):
@@ -418,7 +385,7 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
             otoken_address=self.web3.toChecksumAddress(otoken_address),
             amount=int(amount),
             collateral_amount=int(collateral_amount),
-            collateral_asset=collateral_asset.value,
+            collateral_asset=collateral_asset,
             vault_id=vault_id,
             rysk_option_market=rysk_option_market,
         )

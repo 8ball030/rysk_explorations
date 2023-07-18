@@ -21,6 +21,15 @@ DEFAULT_ENCODING = "utf-8"
 NULL_ADDRESS = "0x0000000000000000000000000000000000000000"
 NULL_DATA = "0x0000000000000000000000000000000000000000"
 SUPPORTED_LEVERAGES = [1, 1.5, 2, 3]
+EMPTY_SERIES = {
+    "expiration": 1,
+    "strike": 1,
+    "isPut": True,
+    "collateral": NULL_ADDRESS,
+    "underlying": NULL_ADDRESS,
+    "strikeAsset": NULL_ADDRESS,
+}
+
 
 CONTRACT_ADDRESSES = {
     "arbitrum": {
