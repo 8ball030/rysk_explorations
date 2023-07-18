@@ -8,9 +8,8 @@ from enum import Enum
 from typing import Dict, List, Optional
 
 from rysk_client.src.collateral import Collateral
+from rysk_client.src.constants import USDC_MULTIPLIER, WETH_MULTIPLIER
 
-HUMAN_NUMBER_FMT = 1e18
-HUMAN_NUMBER_FMT_USDC = 1e6
 EXPIRATION_TIME = "08:00:00"
 
 
@@ -135,7 +134,7 @@ class OptionChain:
         """
         Return the underlying price from the oracle.
         """
-        return self._raw_data[1][-1][-1] / 1e18
+        return self._raw_data[1][-1][-1] / WETH_MULTIPLIER
 
 
 class OptionType(Enum):
@@ -176,7 +175,7 @@ class RyskOptionMarket:  # pylint: disable=too-many-instance-attributes
         """
         _type = "P" if self.is_put else "C"
         _expiration = datetime.fromtimestamp(self.expiration).strftime("%d%b%y").upper()
-        _strike = int(self.strike / 10**18)
+        _strike = int(self.strike / WETH_MULTIPLIER)
         return f"ETH-{_expiration}-{_strike}-{_type}"
 
     @property
@@ -207,19 +206,19 @@ class RyskOptionMarket:  # pylint: disable=too-many-instance-attributes
         market_data = {}
         if self.bid and self.ask and self.dhv is not None:
             market_data = {
-                "bid": self.bid / HUMAN_NUMBER_FMT_USDC,
-                "ask": self.ask / HUMAN_NUMBER_FMT_USDC,
-                "dhv": self.dhv / HUMAN_NUMBER_FMT,
+                "bid": self.bid / USDC_MULTIPLIER,
+                "ask": self.ask / USDC_MULTIPLIER,
+                "dhv": self.dhv / WETH_MULTIPLIER,
             }
         result = {
             "id": self.name,
-            "strike": self.strike / HUMAN_NUMBER_FMT,
+            "strike": self.strike / WETH_MULTIPLIER,
             "expiration": self.expiration,
             "optionType": "put" if self.is_put else "call",
             "active": self.active,
         }
         if self.delta:
-            result["delta"] = self.delta / HUMAN_NUMBER_FMT
+            result["delta"] = self.delta / WETH_MULTIPLIER
         result.update(**market_data)
         return result
 
@@ -227,13 +226,13 @@ class RyskOptionMarket:  # pylint: disable=too-many-instance-attributes
     def from_json(cls, json):
         """Returns a RyskOptionMarket from a json"""
         return cls(
-            strike=json["strike"] * HUMAN_NUMBER_FMT,
+            strike=json["strike"] * WETH_MULTIPLIER,
             expiration=json["expiration"],
             is_put=json["optionType"] == "put",
             active=json["active"],
-            bid=json.get("bid") * HUMAN_NUMBER_FMT_USDC,
-            ask=json.get("ask") * HUMAN_NUMBER_FMT_USDC,
-            dhv=json.get("dhv") * HUMAN_NUMBER_FMT,
+            bid=json.get("bid") * USDC_MULTIPLIER,
+            ask=json.get("ask") * USDC_MULTIPLIER,
+            dhv=json.get("dhv") * WETH_MULTIPLIER,
             delta=json.get("delta"),
         )
 
@@ -260,7 +259,7 @@ class RyskOptionMarket:  # pylint: disable=too-many-instance-attributes
         )
         _expiration = int(expiration_date.timestamp())
 
-        _strike = int(_name[2]) * 10**18
+        _strike = int(_name[2]) * WETH_MULTIPLIER
         _is_put = _name[3] == "P"
         return cls(_strike, _expiration, _is_put)
 

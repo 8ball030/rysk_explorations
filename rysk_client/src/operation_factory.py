@@ -9,7 +9,8 @@ from typing import Optional
 
 from rysk_client.src.action_type import ActionType, RyskActionType
 from rysk_client.src.collateral import Collateral
-from rysk_client.src.constants import NULL_ADDRESS, NULL_DATA, Chain
+from rysk_client.src.constants import (NULL_ADDRESS, NULL_DATA,
+                                       WETH_MULTIPLIER, Chain)
 from rysk_client.src.rysk_option_market import RyskOptionMarket
 
 EMPTY_SERIES = {
@@ -134,8 +135,8 @@ class OperationFactory:
         if rysk_option_market.is_put:
             # here we retrieve how much collateral we get for the amount of options
             # we basically need strike * amount
-            eth = collateral / 1e18
-            strike = rysk_option_market.strike / 1e18
+            eth = collateral / WETH_MULTIPLIER
+            strike = rysk_option_market.strike / WETH_MULTIPLIER
             _amount = from_wei_to_opyn(amount) / 1e2
             collateral_amount = int(eth * strike * _amount)
             collateral = Collateral.USDC.value
@@ -232,8 +233,8 @@ class OperationFactory:
         if rysk_option_market.is_put:
             # here we retrieve how much collateral we get for the amount of options
             # we basically need strike * amount
-            eth = collateral_amount / 1e18
-            strike = rysk_option_market.strike / 1e18
+            eth = collateral_amount / WETH_MULTIPLIER
+            strike = rysk_option_market.strike / WETH_MULTIPLIER
             _amount = from_wei_to_opyn(amount) / 1e2
             collateral_amount = int(eth * strike * _amount)
 
