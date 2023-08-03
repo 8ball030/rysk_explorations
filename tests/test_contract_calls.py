@@ -32,8 +32,9 @@ MARKETS = [
 ]
 
 ACTIVE_MARKETS = [
+    "ETH-28JUL23-2000-C",
+    "ETH-28JUL23-1900-C",
     "ETH-28JUL23-1800-P",
-    "ETH-28JUL23-1900-P",
 ]
 
 
@@ -283,7 +284,7 @@ def test_can_add_to_short_with_no_approval(local_fork, client, market, block):
 
 @pytest.mark.parametrize(
     "market",
-    [ACTIVE_MARKETS[0]],
+    ACTIVE_MARKETS,
 )
 @pytest.mark.flaky(reruns=3)  # why this is the case i am not yet sure.
 def test_client_can_close_long(client, market):

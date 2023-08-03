@@ -9,7 +9,7 @@ from enum import Enum
 from rysk_client.src.action_type import ActionType, RyskActionType
 from rysk_client.src.collateral import CollateralFactory
 from rysk_client.src.constants import (EMPTY_SERIES, NULL_ADDRESS, NULL_DATA,
-                                       WETH_MULTIPLIER, Chain)
+                                       Chain)
 from rysk_client.src.rysk_option_market import MarketFactory, RyskOptionMarket
 from rysk_client.src.utils import from_wei_to_opyn
 
@@ -89,7 +89,7 @@ class OperationFactory:
                 "operation": OperationType.RYSK_ACTION.value,
                 "operationQueue": [
                     {
-                        "actionType": RyskActionType.CLOSE_OPTION.value,
+                        "actionType": RyskActionType.SELL_OPTION.value,
                         "owner": NULL_ADDRESS,
                         "secondAddress": owner_address,
                         "asset": otoken_address,
@@ -111,22 +111,15 @@ class OperationFactory:
         otoken_address: str,
         amount: int,
         vault_id: int,
-        collateral: int,
+        collateral_amount: int,
         rysk_option_market: RyskOptionMarket,
         issue_new_vault: bool = False,
     ):
         """Create the operation to sell an option."""
         if rysk_option_market.is_put:
-            # here we retrieve how much collateral we get for the amount of options
-            # we basically need strike * amount
-            eth = collateral / WETH_MULTIPLIER
-            strike = rysk_option_market.strike / WETH_MULTIPLIER
-            _amount = from_wei_to_opyn(amount) / 1e2
-            collateral_amount = int(eth * strike * _amount)
             collateral = self.collateral_factory.USDC
 
         else:
-            collateral_amount = amount
             collateral = self.collateral_factory.WETH
 
         required_data = [
@@ -209,18 +202,10 @@ class OperationFactory:
         collateral_amount: int,
         collateral_asset: str,
         vault_id: int,
-        rysk_option_market: RyskOptionMarket,
     ):
         """
         Create the operation to close a short options
         """
-        if rysk_option_market.is_put:
-            # here we retrieve how much collateral we get for the amount of options
-            # we basically need strike * amount
-            eth = collateral_amount / WETH_MULTIPLIER
-            strike = rysk_option_market.strike / WETH_MULTIPLIER
-            _amount = from_wei_to_opyn(amount) / 1e2
-            collateral_amount = int(eth * strike * _amount)
 
         tx_data = [
             {
