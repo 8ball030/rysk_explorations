@@ -448,13 +448,13 @@ class RyskClient:  # noqa: R0902
         rysk_option_market = self.get_market(market)
         if rysk_option_market.is_put:
             rysk_option_market.collateral = self.collateral_factory.USDC
+            # we need to approve the collateral
             amount_to_approve = int(
-                self._option_chain.current_price
-                * amount
-                * (1 + ALLOWED_SLIPPAGE)
-                * WETH_MULTIPLIER
+                rysk_option_market.strike / WETH_MULTIPLIER * amount * USDC_MULTIPLIER
             )
             contract = self.web3_client.usdc
+            collateral_asset = "usdc"
+
         else:
             rysk_option_market.collateral = self.collateral_factory.WETH
             amount_to_approve = int(_amount * (1 + ALLOWED_SLIPPAGE))
@@ -469,7 +469,9 @@ class RyskClient:  # noqa: R0902
             collateral=collateral_asset,
         )
 
-        self._logger.info(f"Acceptable premium: ${acceptable_premium:.2f}")
+        self._logger.info(
+            f"Acceptable premium: ${acceptable_premium / USDC_MULTIPLIER:.2f}"
+        )
 
         user_vaults = self.web3_client.fetch_user_vaults(self._crypto.address)
         otoken_id = self.web3_client.get_otoken(series)
@@ -526,7 +528,7 @@ class RyskClient:  # noqa: R0902
             otoken_address=otoken_address,
             amount=int(_amount),
             vault_id=int(vault_id),
-            collateral=int(_amount),
+            collateral_amount=int(amount_to_approve),
             rysk_option_market=rysk_option_market,
             issue_new_vault=issue_new_vault,
         )
@@ -587,7 +589,7 @@ class RyskClient:  # noqa: R0902
             _amount = size * WETH_MULTIPLIER
         if _market.name not in self.active_markets:
             raise ValueError(f"{market} is not an active market...")
-        acceptable_premium = int(_market.ask * (1 - ALLOWED_SLIPPAGE))
+        acceptable_premium = int(_market.ask * (1 - ALLOWED_SLIPPAGE) * size)
         # we check the approval
         otoken_contract = self.web3_client.get_otoken_contract(otoken_address)
 
@@ -660,13 +662,20 @@ class RyskClient:  # noqa: R0902
             raise ValueError(f"Multiple positions for {market}...")
         vault_id = positions[0][0]
 
+        if rysk_option_market.is_put:
+            # here we retrieve how much collateral we get for the amount of options
+            # we basically need strike * amount
+            strike = rysk_option_market.strike / WETH_MULTIPLIER
+            collateral_amount = int(strike * size * USDC_MULTIPLIER)
+        else:
+            collateral_amount = int(_amount)
+
         txn = self.web3_client.close_short(
             acceptable_premium=acceptable_premium,
             amount=int(_amount),
             otoken_address=self.web3_client.web3.toChecksumAddress(otoken_address),
             collateral_asset=rysk_option_market.collateral,
-            collateral_amount=int(_amount),
+            collateral_amount=collateral_amount,
             vault_id=vault_id,
-            rysk_option_market=rysk_option_market,
         )
         return self._sign_and_submit(txn)
