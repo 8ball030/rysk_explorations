@@ -71,10 +71,12 @@ class OperationFactory:
                 "data": NULL_ADDRESS,
             }
         )
-        return {
-            "operation": OperationType.RYSK_ACTION.value,
-            "operationQueue": operations,
-        }
+        return [
+            {
+                "operation": OperationType.RYSK_ACTION.value,
+                "operationQueue": operations,
+            }
+        ]
 
     def close_long(
         self,

@@ -313,5 +313,7 @@ def test_client_can_close_short(
     txn = client.create_order(market, DEFAULT_AMOUNT, side=OrderSide.SELL.value)
     assert txn, "Transaction failed."
 
+    client.fetch_markets()
+
     txn = client.close_short(market, DEFAULT_AMOUNT)
     assert txn, "Transaction failed."

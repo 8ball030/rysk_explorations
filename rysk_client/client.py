@@ -399,7 +399,7 @@ class RyskClient:  # noqa: R0902
         issuance_required = self.is_issuance_required(otoken_address)
 
         operate_tuple = self.operation_factory.buy(
-            int(acceptable_premium),
+            int(acceptable_premium * (1 + ALLOWED_SLIPPAGE)),
             owner_address=self._crypto.address,  # pylint: disable=E1120
             amount=int(_amount),
             option_market=rysk_option_market,
@@ -411,7 +411,7 @@ class RyskClient:  # noqa: R0902
 
         try:
             txn = self.web3_client.option_exchange.functions.operate(
-                [operate_tuple]
+                operate_tuple
             ).build_transaction({"from": self._crypto.address})
         except web3.exceptions.ContractCustomError as error:  # pylint: disable=E1101
             self._logger.error("Transaction failed due to incorrect parameters.")
