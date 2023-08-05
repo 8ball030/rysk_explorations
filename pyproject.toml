@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "rysk_client"
-version = "0.2.9"
+version = "0.2.10"
 description = ""
 authors = ["8baller <8ball030@gmail.com>"]
 readme = "README.md"
