@@ -50,7 +50,7 @@ class Web3Client:  # pylint: disable=too-many-instance-attributes
         logger: Optional[logging.Logger] = None,
         crypto: Optional[EthCrypto] = None,
         chain: Chain = ARBITRUM_GOERLI,
-        verbose: bool = True,
+        verbose: bool = False,
     ):
         """
         Initialize the client with the web3 provider.
