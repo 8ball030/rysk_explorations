@@ -3,7 +3,13 @@
 
 # # Rysk Client
 # 
-# The rysk python client offers a programatic means by which to interact with the (Rysk Finance Protocol)
+# The rysk python client offers a programatic means by which to interact with the (Rysk Finance Protocol).
+# 
+# The DHV is a hybrid AMM and RFQ options protocol, generating uncorrelated returns for its liquidity providers whilst enabling anyone to trade (buy and sell) options with a wide range of strike prices and expiry dates. The DHV uses a dynamic approach in hedging risk to generate market-neutral uncorrelated returns for liquidity providers.
+# 
+# The Rysk client is a python client that allows users to interact with the [Rysk protocol](https://app.rysk.finance). The client is built on top of the web3.py and the [Open-Aea](https://github.com/valory-xyz/open-aea) python libraries. The client allows users to interact with the Rysk protocol in a programatic manner.
+# 
+# 
 # 
 # ## Installation
 # 
