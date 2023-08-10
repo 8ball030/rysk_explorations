@@ -4,7 +4,7 @@ The rysk python client offers a programatic means by which to interact with the 
 
 ## Installation
 
-The application is availale on pypi and can be installed as so
+The application is available on pypi and can be installed as so
 
 ```bash
 pip install rysk-client
