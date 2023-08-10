@@ -12,7 +12,6 @@
 # ```bash
 # pip install rysk-client
 # ```
-# 
 
 # ## Cli Tool
 # 
@@ -26,44 +25,9 @@
 
 # ## Creating a Client 
 # 
-# Clients can be created from the rysk client module.
+# Clients can be created from the rysk client module using python code.
 
 # In[1]:
-
-
-
-
-
-# ### Markets
-# We can fetch data about the markets as so;
-
-# In[1]:
-
-
-get_ipython().system(' rysk markets fetch')
-
-
-# In[ ]:
-
-
-
-
-
-# # Positions
-# 
-# We can view the current positions, along with those which are expired.
-
-# In[2]:
-
-
-get_ipython().system('rysk positions list')
-
-
-# ## Expired positions
-# 
-# We can use the `--expired` flag in order to filter for the expired positions
-
-# In[3]:
 
 
 from rysk_client.client import RyskClient
@@ -73,38 +37,25 @@ auth = {
     "address": DEFAULT_ADDRESS,
 }
 
-print(auth)
-
 client = RyskClient(**auth)
 client
 
 
-# ## Fetching Markets
-# 
-# The client can fetch markets as so;
-# 
+# ### Markets
+# We can fetch data about the markets as so;
 
-# In[4]:
+# In[2]:
 
 
 markets = client.fetch_markets()
 markets[0]
 
 
-# In[5]:
-
-
-get_ipython().system('rysk positions list --expired')
-
-
-# ## Settling Positions
-# We are able to settle the positions based on the vault id
-
 # ## Fetching Tickers
 # 
 # Tickers can be fetched from the client as so;
 
-# In[6]:
+# In[3]:
 
 
 tickers = client.fetch_tickers()
@@ -124,31 +75,11 @@ tickers[0]
 # 
 # 
 
-# In[7]:
+# In[4]:
 
 
 positions = client.fetch_positions()
 positions[0]
-
-
-# # Tests
-
-# In[8]:
-
-
-get_ipython().system('make test')
-
-
-# In[9]:
-
-
-get_ipython().system('make fmt lint')
-
-
-# In[ ]:
-
-
-
 
 
 # ## Dev & Contributing
@@ -161,6 +92,22 @@ get_ipython().system('make fmt lint')
 # pip install -U .
 # ```
 
+# # Tests
+
+# In[5]:
+
+
+get_ipython().system('poetry run pytest tests')
+
+
+# ## Formating and linting
+
+# In[6]:
+
+
+get_ipython().system('make fmt lint')
+
+
 # # Releasing
 # Git ops is used to enable automated releases via pypi.
 # 
@@ -168,6 +115,6 @@ get_ipython().system('make fmt lint')
 # export NEW_VERSION=0.2.11
 # git checkout -b v$NEW_VERSION &&
 #     bumpversion  rysk_client/ --new-version $NEW_VERSION && 
-# git push && git push --tag
+# git push --set-upstream origin (git rev-parse --abbrev-ref HEAD) && git push --tag
 # 
 # ```
