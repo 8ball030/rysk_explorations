@@ -6,6 +6,7 @@ import os
 import sys
 
 import rich_click as click
+from dotenv import load_dotenv
 
 from rysk_client.client import RyskClient
 from rysk_client.src.constants import NULL_ADDRESS
@@ -23,11 +24,16 @@ def set_logger(ctx, level):
 
 def set_client(ctx):
     """Set the client."""
+    # we use dotenv to load the env vars from DIRECTORY where the cli tool is executed
+    _path = os.getcwd()
+    env_path = os.path.join(_path, ".env")
+    load_dotenv(dotenv_path=env_path)
     if not hasattr(ctx, "client"):
         auth = {
-            "address": os.environ["ETH_ADDRESS"],
-            "private_key": os.environ["ETH_PRIVATE_KEY"],
+            "address": os.environ.get("ETH_ADDRESS"),
+            "private_key": os.environ.get("ETH_PRIVATE_KEY"),
             "logger": ctx.logger,
+            "verbose": ctx.logger.level == "DEBUG",
         }
         ctx.client = RyskClient(**auth)
         if not ctx.client.web3_client.web3.isConnected():
@@ -304,4 +310,5 @@ def create_trade(ctx, market, side, amount):
 
 
 if __name__ == "__main__":
+    # we load the .env from the path of the directory we execute the command
     cli()  # pylint: disable=no-value-for-parameter

@@ -33,7 +33,6 @@ def get_logger():
     if logger.hasHandlers():
         return logger
     if sys.stdout.isatty():
-
         handler = RichHandler(
             markup=False,
             rich_tracebacks=True,

@@ -1,100 +1,15 @@
 # Rysk Client
 
+The rysk python client offers a programatic means by which to interact with the (Rysk Finance Protocol)
+
 ## Installation
 
-The application is availale on pypi and can be installed as so;
+The application is availale on pypi and can be installed as so
 
-    ```bash
-    pip install rysk-client
-    ```
-
-### Dev & Contributing
-
-Dependencies are managed with poetry.
-
-For dev build.
-
-
-```python
-!pip install -U .
+```bash
+pip install rysk-client
 ```
 
-    Processing /home/tom/Desktop/Fun/rysk_explorations
-      Installing build dependencies ... [?25ldone
-    [?25h  Getting requirements to build wheel ... [?25ldone
-    [?25h  Preparing metadata (pyproject.toml) ... [?25ldone
-    [?25hRequirement already satisfied: rich-click<2.0.0,>=1.6.1 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from rysk-client==0.1.9) (1.6.1)
-    Requirement already satisfied: ccxt<4.0.0,>=3.1.15 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from rysk-client==0.1.9) (3.1.17)
-    Requirement already satisfied: web3==6.4.0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from rysk-client==0.1.9) (6.4.0)
-    Requirement already satisfied: eth-typing>=3.0.0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from web3==6.4.0->rysk-client==0.1.9) (3.4.0)
-    Requirement already satisfied: websockets>=10.0.0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from web3==6.4.0->rysk-client==0.1.9) (11.0.3)
-    Requirement already satisfied: eth-utils>=2.1.0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from web3==6.4.0->rysk-client==0.1.9) (2.1.1)
-    Requirement already satisfied: requests>=2.16.0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from web3==6.4.0->rysk-client==0.1.9) (2.28.1)
-    Requirement already satisfied: protobuf>=4.21.6 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from web3==6.4.0->rysk-client==0.1.9) (4.23.3)
-    Requirement already satisfied: jsonschema>=4.0.0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from web3==6.4.0->rysk-client==0.1.9) (4.17.3)
-    Requirement already satisfied: lru-dict>=1.1.6 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from web3==6.4.0->rysk-client==0.1.9) (1.1.8)
-    Requirement already satisfied: eth-account>=0.8.0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from web3==6.4.0->rysk-client==0.1.9) (0.9.0)
-    Requirement already satisfied: eth-abi>=4.0.0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from web3==6.4.0->rysk-client==0.1.9) (4.1.0)
-    Requirement already satisfied: eth-hash[pycryptodome]>=0.5.1 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from web3==6.4.0->rysk-client==0.1.9) (0.5.2)
-    Requirement already satisfied: aiohttp>=3.7.4.post0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from web3==6.4.0->rysk-client==0.1.9) (3.8.4)
-    Requirement already satisfied: hexbytes>=0.1.0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from web3==6.4.0->rysk-client==0.1.9) (0.3.0)
-    Requirement already satisfied: aiodns>=1.1.1 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from ccxt<4.0.0,>=3.1.15->rysk-client==0.1.9) (3.0.0)
-    Requirement already satisfied: cryptography>=2.6.1 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from ccxt<4.0.0,>=3.1.15->rysk-client==0.1.9) (39.0.1)
-    Requirement already satisfied: certifi>=2018.1.18 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from ccxt<4.0.0,>=3.1.15->rysk-client==0.1.9) (2022.6.15)
-    Requirement already satisfied: yarl>=1.7.2 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from ccxt<4.0.0,>=3.1.15->rysk-client==0.1.9) (1.7.2)
-    Requirement already satisfied: setuptools>=60.9.0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from ccxt<4.0.0,>=3.1.15->rysk-client==0.1.9) (67.8.0)
-    Requirement already satisfied: click>=7 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from rich-click<2.0.0,>=1.6.1->rysk-client==0.1.9) (8.0.2)
-    Requirement already satisfied: rich>=10.7.0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from rich-click<2.0.0,>=1.6.1->rysk-client==0.1.9) (13.3.1)
-    Requirement already satisfied: pycares>=4.0.0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from aiodns>=1.1.1->ccxt<4.0.0,>=3.1.15->rysk-client==0.1.9) (4.2.2)
-    Requirement already satisfied: async-timeout<5.0,>=4.0.0a3 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from aiohttp>=3.7.4.post0->web3==6.4.0->rysk-client==0.1.9) (4.0.2)
-    Requirement already satisfied: charset-normalizer<4.0,>=2.0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from aiohttp>=3.7.4.post0->web3==6.4.0->rysk-client==0.1.9) (2.1.1)
-    Requirement already satisfied: aiosignal>=1.1.2 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from aiohttp>=3.7.4.post0->web3==6.4.0->rysk-client==0.1.9) (1.2.0)
-    Requirement already satisfied: multidict<7.0,>=4.5 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from aiohttp>=3.7.4.post0->web3==6.4.0->rysk-client==0.1.9) (6.0.2)
-    Requirement already satisfied: frozenlist>=1.1.1 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from aiohttp>=3.7.4.post0->web3==6.4.0->rysk-client==0.1.9) (1.3.1)
-    Requirement already satisfied: attrs>=17.3.0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from aiohttp>=3.7.4.post0->web3==6.4.0->rysk-client==0.1.9) (22.1.0)
-    Requirement already satisfied: cffi>=1.12 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from cryptography>=2.6.1->ccxt<4.0.0,>=3.1.15->rysk-client==0.1.9) (1.15.1)
-    Requirement already satisfied: parsimonious<0.10.0,>=0.9.0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from eth-abi>=4.0.0->web3==6.4.0->rysk-client==0.1.9) (0.9.0)
-    Requirement already satisfied: eth-keyfile>=0.6.0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from eth-account>=0.8.0->web3==6.4.0->rysk-client==0.1.9) (0.6.1)
-    Requirement already satisfied: rlp>=1.0.0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from eth-account>=0.8.0->web3==6.4.0->rysk-client==0.1.9) (3.0.0)
-    Requirement already satisfied: eth-keys>=0.4.0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from eth-account>=0.8.0->web3==6.4.0->rysk-client==0.1.9) (0.4.0)
-    Requirement already satisfied: bitarray>=2.4.0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from eth-account>=0.8.0->web3==6.4.0->rysk-client==0.1.9) (2.7.4)
-    Requirement already satisfied: eth-rlp>=0.3.0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from eth-account>=0.8.0->web3==6.4.0->rysk-client==0.1.9) (0.3.0)
-    Requirement already satisfied: pycryptodome<4,>=3.6.6 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from eth-hash[pycryptodome]>=0.5.1->web3==6.4.0->rysk-client==0.1.9) (3.15.0)
-    Requirement already satisfied: cytoolz>=0.10.1 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from eth-utils>=2.1.0->web3==6.4.0->rysk-client==0.1.9) (0.12.0)
-    Requirement already satisfied: pyrsistent!=0.17.0,!=0.17.1,!=0.17.2,>=0.14.0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from jsonschema>=4.0.0->web3==6.4.0->rysk-client==0.1.9) (0.18.1)
-    Requirement already satisfied: urllib3<1.27,>=1.21.1 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from requests>=2.16.0->web3==6.4.0->rysk-client==0.1.9) (1.26.12)
-    Requirement already satisfied: idna<4,>=2.5 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from requests>=2.16.0->web3==6.4.0->rysk-client==0.1.9) (3.3)
-    Requirement already satisfied: pygments<3.0.0,>=2.14.0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from rich>=10.7.0->rich-click<2.0.0,>=1.6.1->rysk-client==0.1.9) (2.14.0)
-    Requirement already satisfied: markdown-it-py<3.0.0,>=2.1.0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from rich>=10.7.0->rich-click<2.0.0,>=1.6.1->rysk-client==0.1.9) (2.2.0)
-    Requirement already satisfied: pycparser in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from cffi>=1.12->cryptography>=2.6.1->ccxt<4.0.0,>=3.1.15->rysk-client==0.1.9) (2.21)
-    Requirement already satisfied: toolz>=0.8.0 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from cytoolz>=0.10.1->eth-utils>=2.1.0->web3==6.4.0->rysk-client==0.1.9) (0.11.2)
-    Requirement already satisfied: mdurl~=0.1 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from markdown-it-py<3.0.0,>=2.1.0->rich>=10.7.0->rich-click<2.0.0,>=1.6.1->rysk-client==0.1.9) (0.1.2)
-    Requirement already satisfied: regex>=2022.3.15 in /home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages (from parsimonious<0.10.0,>=0.9.0->eth-abi>=4.0.0->web3==6.4.0->rysk-client==0.1.9) (2023.6.3)
-    Building wheels for collected packages: rysk-client
-      Building wheel for rysk-client (pyproject.toml) ... [?25ldone
-    [?25h  Created wheel for rysk-client: filename=rysk_client-0.1.9-py3-none-any.whl size=514236 sha256=f16768223fc0aceb0298909bc28cfd4dbf73a6aaa2aec2867ef94aaed4596de8
-      Stored in directory: /tmp/pip-ephem-wheel-cache-2ifvyr76/wheels/85/5d/62/83b40ae2d2c1fc31bec44436912ab30c592085539d92f35254
-    Successfully built rysk-client
-    [33mWARNING: Error parsing requirements for vulture: [Errno 2] No such file or directory: '/home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages/vulture-2.5.dist-info/METADATA'[0m[33m
-    [0mInstalling collected packages: rysk-client
-      Attempting uninstall: rysk-client
-        Found existing installation: rysk-client 0.1.9
-        Uninstalling rysk-client-0.1.9:
-          Successfully uninstalled rysk-client-0.1.9
-    Successfully installed rysk-client-0.1.9
-    [33mWARNING: You are using pip version 22.0.4; however, version 23.1.2 is available.
-    You should consider upgrading via the '/home/tom/.pyenv/versions/3.10.4/bin/python3.10 -m pip install --upgrade pip' command.[0m[33m
-    [0m
-
-
-```python
-
-```
-
-
-```python
-
-```
 
 ## Cli Tool
 
@@ -102,29 +17,18 @@ The application is also bundled as cli tool to allow users to interact with the 
 
 
 
+
+![alt text](demo.gif "Title")
+
+
+## Creating a Client 
+
+Clients can be created from the rysk client module.
+
+
 ```python
-! rysk
+
 ```
-
-    [1m                                                                                [0m
-    [1m [0m[1;33mUsage: [0m[1mrysk [[0m[1;36mOPTIONS[0m[1m] [0m[1;36mCOMMAND[0m[1m [[0m[1;36mARGS[0m[1m]...[0m[1m                                       [0m[1m [0m
-    [1m                                                                                [0m
-     Rysk client command line interface.                                            
-                                                                                    
-    [2m╭─[0m[2m Options [0m[2m───────────────────────────────────────────────────────────────────[0m[2m─╮[0m
-    [2m│[0m [1;36m-[0m[1;36m-log[0m[1;36m-level[0m  [1;32m-l[0m  [1;2;33m[[0m[1;33mDEBUG[0m[1;2;33m|[0m[1;33mINFO[0m[1;2;33m|[0m[1;33mWARNING[0m[1;2;33m|[0m[1;33mERROR[0m[1;2;33m|[0m[1;33mCR[0m  Logging level.                [2m│[0m
-    [2m│[0m                  [1;33mITICAL[0m[1;2;33m][0m[1;33m                     [0m                                [2m│[0m
-    [2m│[0m [1;36m-[0m[1;36m-help[0m           [1;33m                            [0m  Show this message and exit.   [2m│[0m
-    [2m╰──────────────────────────────────────────────────────────────────────────────╯[0m
-    [2m╭─[0m[2m Commands [0m[2m──────────────────────────────────────────────────────────────────[0m[2m─╮[0m
-    [2m│[0m [1;36mbalances             [0m[1;36m [0m Interact with balances.                               [2m│[0m
-    [2m│[0m [1;36mmarkets              [0m[1;36m [0m Interact with markets.                                [2m│[0m
-    [2m│[0m [1;36mpositions            [0m[1;36m [0m Interact with positions.                              [2m│[0m
-    [2m│[0m [1;36mtickers              [0m[1;36m [0m Interact with tickers.                                [2m│[0m
-    [2m│[0m [1;36mtrades               [0m[1;36m [0m Interact with trades.                                 [2m│[0m
-    [2m╰──────────────────────────────────────────────────────────────────────────────╯[0m
-    
-
 
 ### Markets
 We can fetch data about the markets as so;
@@ -134,26 +38,36 @@ We can fetch data about the markets as so;
 ! rysk markets fetch
 ```
 
-    [2;36m[06/23/23 01:00:18][0m[2;36m [0m[34mINFO    [0m Rysk client initialized and connected  ]8;id=857749;file:///home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages/rysk_client/client.py\[2mclient.py[0m]8;;\[2m:[0m]8;id=815266;file:///home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages/rysk_client/client.py#99\[2m99[0m]8;;\
-    [2;36m                    [0m         to the blockchain at RPC connection    [2m            [0m
-    [2;36m                    [0m         [4;94mhttps://arbitrum-goerli.rpc.thirdweb.c[0m [2m            [0m
-    [2;36m                    [0m         [4;94mom[0m                                     [2m            [0m
-    [2;36m[06/23/23 01:00:18][0m[2;36m [0m[34mINFO    [0m Rysk client initialized and connected  ]8;id=541501;file:///home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages/rysk_client/client.py\[2mclient.py[0m]8;;\[2m:[0m]8;id=410566;file:///home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages/rysk_client/client.py#99\[2m99[0m]8;;\
-    [2;36m                    [0m         to the blockchain at RPC connection    [2m            [0m
-    [2;36m                    [0m         [4;94mhttps://arbitrum-goerli.rpc.thirdweb.c[0m [2m            [0m
-    [2;36m                    [0m         [4;94mom[0m                                     [2m            [0m
-    [3m                              Markets                               [0m
-    ┏━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━━┓
-    ┃[1m [0m[1mid                [0m[1m [0m┃[1m [0m[1mexpiration[0m[1m [0m┃[1m [0m[1mstrike[0m[1m [0m┃[1m [0m[1mbid      [0m[1m [0m┃[1m [0m[1mask      [0m[1m [0m┃
-    ┡━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━━┩
-    │ ETH-30JUN23-1900-C │ 1688112000 │ 1900.0 │ 48.757072 │ 49.693761 │
-    │ ETH-30JUN23-2000-C │ 1688112000 │ 2000.0 │ 29.897698 │ 30.529623 │
-    │ ETH-30JUN23-2100-C │ 1688112000 │ 2100.0 │ 38.865564 │ 39.419208 │
-    │ ETH-30JUN23-1700-P │ 1688112000 │ 1700.0 │ 14.441823 │ 14.94933  │
-    │ ETH-30JUN23-1800-P │ 1688112000 │ 1800.0 │ 34.589717 │ 35.407297 │
-    │ ETH-30JUN23-1900-P │ 1688112000 │ 1900.0 │ 67.834271 │ 69.232565 │
-    └────────────────────┴────────────┴────────┴───────────┴───────────┘
+    Traceback (most recent call last):
+      File "/home/tom/.pyenv/versions/3.9.9/bin/rysk", line 8, in <module>
+        sys.exit(cli())
+      File "/home/tom/.pyenv/versions/3.9.9/lib/python3.9/site-packages/click/core.py", line 1126, in __call__
+        return self.main(*args, **kwargs)
+      File "/home/tom/.pyenv/versions/3.9.9/lib/python3.9/site-packages/rich_click/rich_group.py", line 21, in main
+        rv = super().main(*args, standalone_mode=False, **kwargs)
+      File "/home/tom/.pyenv/versions/3.9.9/lib/python3.9/site-packages/click/core.py", line 1051, in main
+        rv = self.invoke(ctx)
+      File "/home/tom/.pyenv/versions/3.9.9/lib/python3.9/site-packages/click/core.py", line 1654, in invoke
+        super().invoke(ctx)
+      File "/home/tom/.pyenv/versions/3.9.9/lib/python3.9/site-packages/click/core.py", line 1393, in invoke
+        return ctx.invoke(self.callback, **ctx.params)
+      File "/home/tom/.pyenv/versions/3.9.9/lib/python3.9/site-packages/click/core.py", line 752, in invoke
+        return __callback(*args, **kwargs)
+      File "/home/tom/.pyenv/versions/3.9.9/lib/python3.9/site-packages/click/decorators.py", line 26, in new_func
+        return f(get_current_context(), *args, **kwargs)
+      File "/home/tom/.pyenv/versions/3.9.9/lib/python3.9/site-packages/rysk_client/cli.py", line 55, in cli
+        ctx.obj["client"] = set_client(ctx)
+      File "/home/tom/.pyenv/versions/3.9.9/lib/python3.9/site-packages/rysk_client/cli.py", line 32, in set_client
+        "address": os.environ["ETH_ADDRESS"],
+      File "/home/tom/.pyenv/versions/3.9.9/lib/python3.9/os.py", line 679, in __getitem__
+        raise KeyError(key) from None
+    KeyError: 'ETH_ADDRESS'
 
+
+
+```python
+
+```
 
 # Positions
 
@@ -161,118 +75,38 @@ We can view the current positions, along with those which are expired.
 
 
 ```python
-! export ETH_ADDRESS=0x9B8a204636a7aa9c33053d9C3A828720d32212e8 && \
-  export ETH_PRIVATE_KEY=0x75cc9212e9e1243b9a3e5db5012f39469254088e33363324ad94dd0b212d7efa && \
-    rysk positions list
+!rysk positions list
 ```
 
-    [2;36m[06/23/23 01:00:20][0m[2;36m [0m[34mINFO    [0m Fetching positions for                   ]8;id=669384;file:///home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages/rysk_client/cli.py\[2mcli.py[0m]8;;\[2m:[0m]8;id=495604;file:///home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages/rysk_client/cli.py#101\[2m101[0m]8;;\
-    [2;36m                    [0m         [1;36m0x9B8a204636a7aa9c33053d9C3A828720d32212[0m [2m          [0m
-    [2;36m                    [0m         [1;36me8[0m                                       [2m          [0m
-    [2;36m                   [0m[2;36m [0m[34mINFO    [0m Rysk client initialized and connected  ]8;id=59983;file:///home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages/rysk_client/client.py\[2mclient.py[0m]8;;\[2m:[0m]8;id=529467;file:///home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages/rysk_client/client.py#99\[2m99[0m]8;;\
-    [2;36m                    [0m         to the blockchain at RPC connection    [2m            [0m
-    [2;36m                    [0m         [4;94mhttps://arbitrum-goerli.rpc.thirdweb.c[0m [2m            [0m
-    [2;36m                    [0m         [4;94mom[0m                                     [2m            [0m
-    [3m                                   Positions                                    [0m
-    ┏━━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━┓
-    ┃[1m [0m[1msymbol    [0m[1m [0m┃[1m [0m[1mside [0m[1m [0m┃[1m [0m[1mentryPrice[0m[1m [0m┃[1m [0m[1mid       [0m[1m [0m┃[1m [0m[1msize [0m[1m [0m┃[1m [0m[1munrealize…[0m[1m [0m┃[1m [0m[1mrealized…[0m[1m [0m┃
-    ┡━━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━┩
-    │ ETH-30JUN… │ long  │ -70.13740… │ 0x9b8a20… │ 25.0  │ 1753.4350… │ 0         │
-    │ ETH-30JUN… │ short │ 0          │ 0x9b8a20… │ 0.0   │ 0.0        │ 19396.75… │
-    │ ETH-30JUN… │ short │ 0          │ 0x9b8a20… │ 0.0   │ 0.0        │ 21249.08… │
-    │ ETH-30JUN… │ short │ 105.35629… │ 0x9b8a20… │ -2.0  │ 210.712583 │ 0         │
-    │ ETH-30JUN… │ short │ 118.16245… │ 0x9b8a20… │ -14.0 │ 1654.2744… │ 0         │
-    │ ETH-30JUN… │ short │ 106.420235 │ 0x9b8a20… │ -1.0  │ 106.420235 │ 0         │
-    └────────────┴───────┴────────────┴───────────┴───────┴────────────┴───────────┘
+    Traceback (most recent call last):
+      File "/home/tom/.pyenv/versions/3.9.9/bin/rysk", line 8, in <module>
+        sys.exit(cli())
+      File "/home/tom/.pyenv/versions/3.9.9/lib/python3.9/site-packages/click/core.py", line 1126, in __call__
+        return self.main(*args, **kwargs)
+      File "/home/tom/.pyenv/versions/3.9.9/lib/python3.9/site-packages/rich_click/rich_group.py", line 21, in main
+        rv = super().main(*args, standalone_mode=False, **kwargs)
+      File "/home/tom/.pyenv/versions/3.9.9/lib/python3.9/site-packages/click/core.py", line 1051, in main
+        rv = self.invoke(ctx)
+      File "/home/tom/.pyenv/versions/3.9.9/lib/python3.9/site-packages/click/core.py", line 1654, in invoke
+        super().invoke(ctx)
+      File "/home/tom/.pyenv/versions/3.9.9/lib/python3.9/site-packages/click/core.py", line 1393, in invoke
+        return ctx.invoke(self.callback, **ctx.params)
+      File "/home/tom/.pyenv/versions/3.9.9/lib/python3.9/site-packages/click/core.py", line 752, in invoke
+        return __callback(*args, **kwargs)
+      File "/home/tom/.pyenv/versions/3.9.9/lib/python3.9/site-packages/click/decorators.py", line 26, in new_func
+        return f(get_current_context(), *args, **kwargs)
+      File "/home/tom/.pyenv/versions/3.9.9/lib/python3.9/site-packages/rysk_client/cli.py", line 55, in cli
+        ctx.obj["client"] = set_client(ctx)
+      File "/home/tom/.pyenv/versions/3.9.9/lib/python3.9/site-packages/rysk_client/cli.py", line 32, in set_client
+        "address": os.environ["ETH_ADDRESS"],
+      File "/home/tom/.pyenv/versions/3.9.9/lib/python3.9/os.py", line 679, in __getitem__
+        raise KeyError(key) from None
+    KeyError: 'ETH_ADDRESS'
 
 
 ## Expired positions
 
 We can use the `--expired` flag in order to filter for the expired positions
-
-
-```python
-! export ETH_ADDRESS=0x9B8a204636a7aa9c33053d9C3A828720d32212e8 && \
-  export ETH_PRIVATE_KEY=0x75cc9212e9e1243b9a3e5db5012f39469254088e33363324ad94dd0b212d7efa && \
-    rysk positions list --expired
-```
-
-    [2;36m[06/23/23 00:59:40][0m[2;36m [0m[34mINFO    [0m Fetching positions for                   ]8;id=480925;file:///home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages/rysk_client/cli.py\[2mcli.py[0m]8;;\[2m:[0m]8;id=771916;file:///home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages/rysk_client/cli.py#101\[2m101[0m]8;;\
-    [2;36m                    [0m         [1;36m0x9B8a204636a7aa9c33053d9C3A828720d32212[0m [2m          [0m
-    [2;36m                    [0m         [1;36me8[0m                                       [2m          [0m
-    [2;36m                   [0m[2;36m [0m[34mINFO    [0m Rysk client initialized and connected  ]8;id=57521;file:///home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages/rysk_client/client.py\[2mclient.py[0m]8;;\[2m:[0m]8;id=661600;file:///home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages/rysk_client/client.py#99\[2m99[0m]8;;\
-    [2;36m                    [0m         to the blockchain at RPC connection    [2m            [0m
-    [2;36m                    [0m         [4;94mhttps://arbitrum-goerli.rpc.thirdweb.c[0m [2m            [0m
-    [2;36m                    [0m         [4;94mom[0m                                     [2m            [0m
-    [3m                                   Positions                                    [0m
-    ┏━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━┓
-    ┃[1m [0m[1msymbol   [0m[1m [0m┃[1m [0m[1mside [0m[1m [0m┃[1m [0m[1mentryPrice[0m[1m [0m┃[1m [0m[1mid       [0m[1m [0m┃[1m [0m[1msize  [0m[1m [0m┃[1m [0m[1munrealize…[0m[1m [0m┃[1m [0m[1mrealized…[0m[1m [0m┃
-    ┡━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━┩
-    │ ETH-09JU… │ long  │ -124.0908… │ 0x9b8a20… │ 360.0  │ 44672.716… │ 0         │
-    │ ETH-02JU… │ long  │ -26.10214… │ 0x9b8a20… │ 29.0   │ 756.96213  │ 0         │
-    │ ETH-09JU… │ long  │ 0          │ 0x9b8a20… │ 0.0    │ 0.0        │ 6467.678… │
-    │ ETH-09JU… │ long  │ -63.358176 │ 0x9b8a20… │ 1.0    │ 63.358176  │ 0         │
-    │ ETH-09JU… │ long  │ -88.566839 │ 0x9b8a20… │ 1.0    │ 88.566839  │ 0         │
-    │ ETH-09JU… │ long  │ -38.77678… │ 0x9b8a20… │ 35.0   │ 1357.1874… │ 0         │
-    │ ETH-09JU… │ long  │ -63.12680… │ 0x9b8a20… │ 20.0   │ 1262.53608 │ 0         │
-    │ ETH-02JU… │ long  │ -54.35290… │ 0x9b8a20… │ 30.0   │ 1630.5871… │ 0         │
-    │ ETH-26MA… │ long  │ -12.03728… │ 0x9b8a20… │ 60.0   │ 722.236956 │ 0         │
-    │ ETH-26MA… │ short │ 27.097653… │ 0x9b8a20… │ -10.0  │ 270.976537 │ 0         │
-    │ ETH-02JU… │ short │ 25.513680… │ 0x9b8a20… │ -29.0  │ 739.896739 │ 0         │
-    │ ETH-09JU… │ short │ 69.354942  │ 0x9b8a20… │ -1.0   │ 69.354942  │ 0         │
-    │ ETH-09JU… │ short │ 0          │ 0x9b8a20… │ 0.0    │ 0.0        │ 244529.4… │
-    │ ETH-09JU… │ short │ 48.222507… │ 0x9b8a20… │ -150.0 │ 7233.3761… │ 0         │
-    │ ETH-16JU… │ short │ 0          │ 0x9b8a20… │ 0.0    │ 0.0        │ 17592.72… │
-    │ ETH-16JU… │ short │ 21.762156… │ 0x9b8a20… │ -20.0  │ 435.24313… │ 0         │
-    │ ETH-26MA… │ short │ 50.9876923 │ 0x9b8a20… │ -10.0  │ 509.876923 │ 0         │
-    │ ETH-02JU… │ short │ 31.792668  │ 0x9b8a20… │ -1.0   │ 31.792668  │ 0         │
-    │ ETH-26MA… │ short │ 47.281672… │ 0x9b8a20… │ -40.0  │ 1891.2668… │ 0         │
-    └───────────┴───────┴────────────┴───────────┴────────┴────────────┴───────────┘
-
-
-## Settling Positions
-We are able to settle the positions based on the vault id
-
-
-```python
-
-! export ETH_ADDRESS=0x9B8a204636a7aa9c33053d9C3A828720d32212e8 && \
-  export ETH_PRIVATE_KEY=0x75cc9212e9e1243b9a3e5db5012f39469254088e33363324ad94dd0b212d7efa && \
-  rysk positions settle -v 15
-```
-
-    [2;36m[06/23/23 01:02:47][0m[2;36m [0m[34mINFO    [0m Settling vault [1;36m15[0m for                    ]8;id=770874;file:///home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages/rysk_client/cli.py\[2mcli.py[0m]8;;\[2m:[0m]8;id=837991;file:///home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages/rysk_client/cli.py#148\[2m148[0m]8;;\
-    [2;36m                    [0m         [1;36m0x9B8a204636a7aa9c33053d9C3A828720d32212[0m [2m          [0m
-    [2;36m                    [0m         [1;36me8[0m                                       [2m          [0m
-    [2;36m                   [0m[2;36m [0m[34mINFO    [0m Rysk client initialized and connected  ]8;id=936728;file:///home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages/rysk_client/client.py\[2mclient.py[0m]8;;\[2m:[0m]8;id=522814;file:///home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages/rysk_client/client.py#99\[2m99[0m]8;;\
-    [2;36m                    [0m         to the blockchain at RPC connection    [2m            [0m
-    [2;36m                    [0m         [4;94mhttps://arbitrum-goerli.rpc.thirdweb.c[0m [2m            [0m
-    [2;36m                    [0m         [4;94mom[0m                                     [2m            [0m
-    Traceback (most recent call last):
-      File "/home/tom/.pyenv/versions/3.10.4/bin/rysk", line 8, in <module>
-        sys.exit(cli())
-      File "/home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages/click/core.py", line 1126, in __call__
-        return self.main(*args, **kwargs)
-      File "/home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages/rich_click/rich_group.py", line 21, in main
-        rv = super().main(*args, standalone_mode=False, **kwargs)
-      File "/home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages/click/core.py", line 1051, in main
-        rv = self.invoke(ctx)
-      File "/home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages/click/core.py", line 1657, in invoke
-        return _process_result(sub_ctx.command.invoke(sub_ctx))
-      File "/home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages/click/core.py", line 1657, in invoke
-        return _process_result(sub_ctx.command.invoke(sub_ctx))
-      File "/home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages/click/core.py", line 1393, in invoke
-        return ctx.invoke(self.callback, **ctx.params)
-      File "/home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages/click/core.py", line 752, in invoke
-        return __callback(*args, **kwargs)
-      File "/home/tom/.pyenv/versions/3.10.4/lib/python3.10/site-packages/rysk_client/cli.py", line 158, in settle
-        raise ValueError(
-    ValueError: Vault 15 has already been settled for 0x9B8a204636a7aa9c33053d9C3A828720d32212e8
-
-
-## Creating a Client 
-
-Clients can be created from the rysk client module.
 
 
 ```python
@@ -290,10 +124,14 @@ client
 
 ```
 
+    {'address': '0x9B8a204636a7aa9c33053d9C3A828720d32212e8'}
+    Rysk client initialized and connected to the blockchain at RPC connection https://arbitrum-goerli.rpc.thirdweb.com
 
 
 
-    RyskClient(_markets=[], _tickers=[], _otokens={})
+
+
+    RyskClient(_markets=[], _tickers=[], _otokens={}, web3_client=<rysk_client.web3_client.Web3Client object at 0x7f4e7769eb00>)
 
 
 
@@ -311,35 +149,57 @@ markets[0]
 
 
 
-    {'base': 'ETH',
-     'baseId': 'ETH',
-     'contract': True,
-     'contractSize': 1.0,
-     'spot': False,
-     'swap': False,
-     'future': False,
-     'type': 'option',
-     'linear': False,
-     'inverse': True,
+    {'id': 'ETH-29SEP23-1800-C',
+     'strike': 1800.0,
+     'expiration': 1695974400,
+     'optionType': 'call',
      'active': True,
-     'id': 'ETH-30JUN23-1700-P',
-     'strike': 1700.0,
-     'optionType': 'put',
-     'expiry': 1688112000000,
-     'expiryDatetime': '2023-06-30T09:00:00.000000Z',
-     'info': {'id': '0x01f460be7389b109cc3599941166ea851d0b7c787badf04b1f276d3ce9269a34',
-      'expiration': '1688112000',
-      'netDHVExposure': '-60750000000000000000',
-      'strike': '1700000000000000000000',
-      'isPut': True,
-      'isBuyable': True,
-      'isSellable': True,
-      'expiration_datetime': datetime.datetime(2023, 6, 30, 9, 0)},
-     'symbol': 'ETH-30JUN23-1700-P',
-     'maker': 0.0003,
-     'taker': 0.0003}
+     'delta': 0.6261148870195038,
+     'bid': 124.475362,
+     'ask': 133.443211,
+     'dhv': 0.1}
 
 
+
+
+```python
+
+!rysk positions list --expired
+```
+
+    [2;36m[08/10/23 16:07:55][0m[2;36m [0m[34mINFO    [0m Rysk client initialized and connected ]8;id=441140;file:///home/tom/.pyenv/versions/3.9.9/lib/python3.9/site-packages/rysk_client/client.py\[2mclient.py[0m]8;;\[2m:[0m]8;id=455202;file:///home/tom/.pyenv/versions/3.9.9/lib/python3.9/site-packages/rysk_client/client.py#110\[2m110[0m]8;;\
+    [2;36m                    [0m         to the blockchain at RPC connection   [2m             [0m
+    [2;36m                    [0m         [4;94mhttps://arbitrum-goerli.rpc.thirdweb.[0m [2m             [0m
+    [2;36m                    [0m         [4;94mcom[0m                                   [2m             [0m
+    [2;36m[08/10/23 16:07:56][0m[2;36m [0m[34mINFO    [0m Fetching positions for [3;35mNone[0m              ]8;id=199407;file:///home/tom/.pyenv/versions/3.9.9/lib/python3.9/site-packages/rysk_client/cli.py\[2mcli.py[0m]8;;\[2m:[0m]8;id=621441;file:///home/tom/.pyenv/versions/3.9.9/lib/python3.9/site-packages/rysk_client/cli.py#144\[2m144[0m]8;;\
+    Traceback (most recent call last):
+      File "/home/tom/.pyenv/versions/3.9.9/bin/rysk", line 8, in <module>
+        sys.exit(cli())
+      File "/home/tom/.pyenv/versions/3.9.9/lib/python3.9/site-packages/click/core.py", line 1126, in __call__
+        return self.main(*args, **kwargs)
+      File "/home/tom/.pyenv/versions/3.9.9/lib/python3.9/site-packages/rich_click/rich_group.py", line 21, in main
+        rv = super().main(*args, standalone_mode=False, **kwargs)
+      File "/home/tom/.pyenv/versions/3.9.9/lib/python3.9/site-packages/click/core.py", line 1051, in main
+        rv = self.invoke(ctx)
+      File "/home/tom/.pyenv/versions/3.9.9/lib/python3.9/site-packages/click/core.py", line 1657, in invoke
+        return _process_result(sub_ctx.command.invoke(sub_ctx))
+      File "/home/tom/.pyenv/versions/3.9.9/lib/python3.9/site-packages/click/core.py", line 1657, in invoke
+        return _process_result(sub_ctx.command.invoke(sub_ctx))
+      File "/home/tom/.pyenv/versions/3.9.9/lib/python3.9/site-packages/click/core.py", line 1393, in invoke
+        return ctx.invoke(self.callback, **ctx.params)
+      File "/home/tom/.pyenv/versions/3.9.9/lib/python3.9/site-packages/click/core.py", line 752, in invoke
+        return __callback(*args, **kwargs)
+      File "/home/tom/.pyenv/versions/3.9.9/lib/python3.9/site-packages/click/decorators.py", line 26, in new_func
+        return f(get_current_context(), *args, **kwargs)
+      File "/home/tom/.pyenv/versions/3.9.9/lib/python3.9/site-packages/rysk_client/cli.py", line 147, in list_positions
+        positions = client.fetch_positions(expired=expired)
+      File "/home/tom/.pyenv/versions/3.9.9/lib/python3.9/site-packages/rysk_client/client.py", line 208, in fetch_positions
+        raise ValueError("No account address was provided.")
+    ValueError: No account address was provided.
+
+
+## Settling Positions
+We are able to settle the positions based on the vault id
 
 ## Fetching Tickers
 
@@ -620,13 +480,23 @@ positions[0]
 
 ```
 
+## Dev & Contributing
+
+Dependencies are managed with poetry.
+
+For dev build.
+
+```bash
+pip install -U .
+```
+
 # Releasing
 Git ops is used to enable automated releases via pypi.
 
 ```bash
-export NEW_VERSION=0.2.0
-git checkout -b v$NEW_VERSION
-bumpversion  rysk_client/ --new-version $NEW_VERSION
+export NEW_VERSION=0.2.11
+git checkout -b v$NEW_VERSION &&
+    bumpversion  rysk_client/ --new-version $NEW_VERSION && 
 git push && git push --tag
 
 ```
