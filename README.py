@@ -13,7 +13,7 @@
 # 
 # ## Installation
 # 
-# The application is availale on pypi and can be installed as so
+# The application is available on pypi and can be installed as so
 # 
 # ```bash
 # pip install rysk-client
@@ -95,7 +95,8 @@ positions[0]
 # For dev build.
 # 
 # ```bash
-# pip install -U .
+# poetry install 
+# poetry shell 
 # ```
 
 # # Tests

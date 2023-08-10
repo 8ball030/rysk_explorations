@@ -169,7 +169,8 @@ Dependencies are managed with poetry.
 For dev build.
 
 ```bash
-pip install -U .
+poetry install 
+poetry shell 
 ```
 
 # Tests
