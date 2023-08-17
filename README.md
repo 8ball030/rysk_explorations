@@ -30,6 +30,14 @@ The application is also bundled as cli tool to allow users to interact with the 
 ![alt text](demo.gif "Title")
 
 
+### Setting Up The Env
+
+There are a few varaibles which can be configured to modify the behaviour of the client. These are:
+
+- ETH_ADDRESS: The address of the Ethereum account to use for the client. This account must have a balance of ARB to pay for gas fees.
+- ETH_PRIVATE_KEY: The private key of the Ethereum account to use for the client. This account must have a balance of ARB to pay for gas fees.
+- CHAIN: The chain to connect to. This can be either 'arbitrum' or 'arbitrum-goerli'.
+
 ## Creating a Client 
 
 Clients can be created from the rysk client module using python code.
@@ -37,25 +45,30 @@ Clients can be created from the rysk client module using python code.
 
 ```python
 from rysk_client.client import RyskClient
+from rysk_client.src.constants import ARBITRUM, ARBITRUM_GOERLI
 from tests.conftest import DEFAULT_ADDRESS
 
 auth = {
     "address": DEFAULT_ADDRESS,
 }
 
-client = RyskClient(**auth)
+# we can also set the chain to arbitrum  NOTE by default the chain is arbitrum goerli
+
+chain = ARBITRUM
+chain = ARBITRUM_GOERLI
+
+client = RyskClient(**auth, chain=chain)
 client
 
 ```
 
-    {'address': '0x9B8a204636a7aa9c33053d9C3A828720d32212e8'}
-    Rysk client initialized and connected to the blockchain at RPC connection https://arbitrum-goerli.rpc.thirdweb.com
+    Rysk client initialized and connected to the blockchain at RPC connection https://arbitrum.public-rpc.com
 
 
 
 
 
-    RyskClient(_markets=[], _tickers=[], _otokens={}, web3_client=<rysk_client.web3_client.Web3Client object at 0x7f1df5ff0670>)
+    RyskClient(_markets=[], _tickers=[], _otokens={}, web3_client=<rysk_client.web3_client.Web3Client object at 0x7ff0995ded10>)
 
 
 

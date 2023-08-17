@@ -9,7 +9,7 @@ import rich_click as click
 from dotenv import load_dotenv
 
 from rysk_client.client import RyskClient
-from rysk_client.src.constants import NULL_ADDRESS
+from rysk_client.src.constants import ARBITRUM, ARBITRUM_GOERLI, NULL_ADDRESS
 from rysk_client.src.position_side import PositionSide
 from rysk_client.src.utils import get_logger, render_table
 
@@ -35,7 +35,12 @@ def set_client(ctx):
             "logger": ctx.logger,
             "verbose": ctx.logger.level == "DEBUG",
         }
-        ctx.client = RyskClient(**auth)
+        chain = os.environ.get("CHAIN")
+        if chain == "arbitrum":
+            chain = ARBITRUM
+        else:
+            chain = ARBITRUM_GOERLI
+        ctx.client = RyskClient(**auth, chain=chain)
         if not ctx.client.web3_client.web3.isConnected():
             raise ConnectionError("Web3 client not connected.")
     return ctx.client
