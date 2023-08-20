@@ -157,7 +157,7 @@ class RyskClient:  # noqa: R0902
 
     def fetch_markets(self) -> List[Dict[str, Any]]:
         """
-        Fetchs the markets from the subgraph.
+        Fetchs the markets from the DHV Lens contracts.
         """
 
         raw_data = self.web3_client.get_option_chain()
