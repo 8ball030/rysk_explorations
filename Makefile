@@ -54,3 +54,5 @@ build: fmt
 
 test-docs: build
 	poetry run ipython README.py
+
+all: fmt lint test clean

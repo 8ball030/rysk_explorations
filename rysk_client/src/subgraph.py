@@ -119,6 +119,19 @@ LONG_SUBGRAPH_QUERY = """
 """
 
 
+INDEX_QUERY = """
+{
+  stat(id: 0 block: {number: %s}) {
+    id
+  }
+}
+"""
+
+
+class BlockNotIndexed(Exception):
+    """Block not indexed."""
+
+
 @dataclass
 class SubgraphClient:
     """Simple client to interact with the Rysk subgraph."""
@@ -156,3 +169,12 @@ class SubgraphClient:
         query = SHORT_SUBGRAPH_QUERY % address.lower()
         result = self._query(query)
         return result["shortPositions"]
+
+    def query_index(self, block: int) -> Dict[str, Any]:
+        """Query the subgraph for index."""
+        query = INDEX_QUERY % block
+        try:
+            result = self._query(query)
+            return result["stat"]
+        except KeyError as err:
+            raise BlockNotIndexed(f"Block {block} not indexed.") from err
