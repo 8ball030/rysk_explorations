@@ -62,6 +62,7 @@ SHORT_SUBGRAPH_QUERY = """
         }
         settleActions {
             id
+            amount
         }
         optionsBoughtTransactions {
             amount
@@ -103,6 +104,7 @@ LONG_SUBGRAPH_QUERY = """
         }
         redeemActions {
             id
+            payoutAmount
         }
         optionsBoughtTransactions {
             amount
