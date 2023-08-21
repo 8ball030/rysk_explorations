@@ -175,7 +175,7 @@ class OperationFactory:
                         "actionType": RyskActionType.SELL_OPTION.value,
                         "owner": NULL_ADDRESS,
                         "secondAddress": owner_address,
-                        "asset": NULL_ADDRESS,
+                        "asset": otoken_address,
                         "vaultId": 0,
                         "amount": amount,
                         "optionSeries": {
