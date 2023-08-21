@@ -63,14 +63,17 @@ SHORT_SUBGRAPH_QUERY = """
         settleActions {
             id
             amount
+            transactionHash
         }
         optionsBoughtTransactions {
             amount
             premium
+            transactionHash
         }
         optionsSoldTransactions {
             amount
             premium
+            transactionHash
         }
   }
 }
@@ -105,14 +108,17 @@ LONG_SUBGRAPH_QUERY = """
         redeemActions {
             id
             payoutAmount
+            transactionHash
         }
         optionsBoughtTransactions {
             amount
             premium
+            transactionHash
         }
         optionsSoldTransactions {
             amount
             premium
+            transactionHash
         }
   }
 }

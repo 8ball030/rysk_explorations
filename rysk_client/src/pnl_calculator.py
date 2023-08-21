@@ -11,6 +11,10 @@ class Trade:
         quantity=None,
         price=None,
         total_cost=None,
+        market=None,
+        side=None,
+        fee=None,
+        trade_id=None,
     ):
         if sum([quantity is None, price is None, total_cost is None]) != 1:
             raise ValueError(
@@ -28,6 +32,10 @@ class Trade:
         elif price is not None and total_cost is not None:
             self._quantity = total_cost / price
             self._price, self._total_cost = price, total_cost
+        self.market = market
+        self.side = side
+        self.fee = fee
+        self.trade_id = trade_id
 
     @property
     def quantity(self):
@@ -62,6 +70,7 @@ class PnlCalculator:
         self.position_size = 0
         self.total_cost = 0
         self.realised_pnl_total = 0
+        self.trades = []
 
     def update_price(self, price):
         """Update the current price of the PnlCalculator."""
@@ -104,6 +113,7 @@ class PnlCalculator:
         assert pnl_calculator.realised_pnl == 10
 
         """
+        self.trades.append(trade)
         # handle open
         if self.position_size == 0:
             self.position_size = trade.quantity
