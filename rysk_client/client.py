@@ -679,3 +679,60 @@ class RyskClient:  # noqa: R0902
             vault_id=vault_id,
         )
         return self._sign_and_submit(txn)
+
+    def fetch_trades(self):
+        """List trades."""
+        self._logger.info("Listing trades for every position in the subgraph...")
+        positions = self.fetch_positions()
+        tickers = {ticker["id"]: ticker for ticker in self.fetch_tickers()}
+
+        all_trades = []
+
+        for position in positions:
+            symbol = position["symbol"]
+            pnl_manager = PnlCalculator()
+            pnl_manager.add_trades(
+                [
+                    Trade(
+                        int(order["amount"]) / WETH_MULTIPLIER,
+                        total_cost=int(order["premium"]) / USDC_MULTIPLIER,
+                        market=symbol,
+                        trade_id=order["transactionHash"],
+                    )
+                    for order in position["info"]["optionsBoughtTransactions"]
+                ]
+            )
+            pnl_manager.add_trades(
+                [
+                    Trade(
+                        -int(order["amount"]) / WETH_MULTIPLIER,
+                        total_cost=-int(order["premium"]) / USDC_MULTIPLIER,
+                        market=symbol,
+                        trade_id=order["transactionHash"],
+                    )
+                    for order in position["info"]["optionsSoldTransactions"]
+                ]
+            )
+            all_trades += pnl_manager.trades
+            if symbol not in tickers:
+                self._logger.warning(f"Could not find {symbol} in the tickers.")
+                _rate = pnl_manager.current_price
+            else:
+                _rate = (tickers[symbol]["ask"] + tickers[symbol]["bid"]) / 2
+            pnl_manager.update_price(_rate)
+            self._logger.info(
+                f"Position {position['symbol']} has a realised pnl of {pnl_manager.realised_pnl}"
+            )
+            self._logger.info(
+                f"Position {position['symbol']} has a unrealised pnl of {pnl_manager.unrealised_pnl}"
+            )
+            self._logger.info(
+                f"Position {position['symbol']} has a position size of {pnl_manager.position_size}"
+            )
+            self._logger.info(
+                f"Position {position['symbol']} has an average price of {pnl_manager.average_price}"
+            )
+            self._logger.info(
+                f"Position {position['symbol']} has a current price of {pnl_manager.current_price}"
+            )
+        return all_trades

@@ -2,6 +2,7 @@
 Command line interface for rysk_client
 """
 
+import csv
 import os
 import sys
 
@@ -9,7 +10,8 @@ import rich_click as click
 from dotenv import load_dotenv
 
 from rysk_client.client import RyskClient
-from rysk_client.src.constants import ARBITRUM, ARBITRUM_GOERLI, NULL_ADDRESS
+from rysk_client.src.constants import (ARBITRUM, ARBITRUM_GOERLI,
+                                       DEFAULT_ENCODING, NULL_ADDRESS)
 from rysk_client.src.position_side import PositionSide
 from rysk_client.src.utils import get_logger, render_table
 
@@ -291,9 +293,38 @@ def collateralize():
 
 
 @trades.command("list")
-def list_trades():
+@click.pass_context
+@click.option("--to-csv", "-c", is_flag=True, help="Output to csv.", default=False)
+def list_trades(ctx, to_csv):
     """List trades."""
-    raise NotImplementedError  # disable=raising-to-general-error
+    client = ctx.obj["client"]
+    logger = ctx.obj["logger"]
+    trades = client.fetch_trades()
+    trades_list = []
+    for trade in trades:
+        trades_list.append(
+            {
+                "id": trade.id,
+                "market": trade.market,
+                "amount": trade.quantity,
+                "price": trade.price,
+            }
+        )
+    columns = [
+        "id",
+        "market",
+        "amount",
+        "price",
+    ]
+    render_table("Trades", trades_list, columns)
+    if to_csv:
+        with open("trades.csv", "w", encoding=DEFAULT_ENCODING) as file:
+            writer = csv.writer(file)
+            writer.writerow(columns)
+            for trade in trades_list:
+                writer.writerow(trade.values())
+        logger.info("Wrote trades to trades.csv")
+    logger.info(f"Total trades: {len(trades)}")
 
 
 @trades.command("create")

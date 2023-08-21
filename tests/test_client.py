@@ -54,3 +54,9 @@ def test_create_sell_order(client):
     market = client.fetch_markets()[0]
     order = client.create_order(market["id"], 1, "sell")
     assert order
+
+
+def test_fetch_trades(client):
+    """Test fetching trades."""
+    trades = client.fetch_trades()
+    assert len(trades) > 0

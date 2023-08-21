@@ -62,14 +62,18 @@ SHORT_SUBGRAPH_QUERY = """
         }
         settleActions {
             id
+            amount
+            transactionHash
         }
         optionsBoughtTransactions {
             amount
             premium
+            transactionHash
         }
         optionsSoldTransactions {
             amount
             premium
+            transactionHash
         }
   }
 }
@@ -103,18 +107,35 @@ LONG_SUBGRAPH_QUERY = """
         }
         redeemActions {
             id
+            payoutAmount
+            transactionHash
         }
         optionsBoughtTransactions {
             amount
             premium
+            transactionHash
         }
         optionsSoldTransactions {
             amount
             premium
+            transactionHash
         }
   }
 }
 """
+
+
+INDEX_QUERY = """
+{
+  stat(id: 0 block: {number: %s}) {
+    id
+  }
+}
+"""
+
+
+class BlockNotIndexed(Exception):
+    """Block not indexed."""
 
 
 @dataclass
@@ -154,3 +175,12 @@ class SubgraphClient:
         query = SHORT_SUBGRAPH_QUERY % address.lower()
         result = self._query(query)
         return result["shortPositions"]
+
+    def query_index(self, block: int) -> Dict[str, Any]:
+        """Query the subgraph for index."""
+        query = INDEX_QUERY % block
+        try:
+            result = self._query(query)
+            return result["stat"]
+        except KeyError as err:
+            raise BlockNotIndexed(f"Block {block} not indexed.") from err
