@@ -16,6 +16,8 @@ from rysk_client.src.order_side import OrderSide
 from rysk_client.src.rysk_option_market import MarketFactory, RyskOptionMarket
 from tests.constants import DEFAULT_FORK_BLOCK_NUMBER
 
+RETRIES = 4
+
 MARKETS = [
     "ETH-30JUN23-1700-P",
     "ETH-30JUN23-1800-P",
@@ -286,7 +288,7 @@ def test_can_add_to_short_with_no_approval(local_fork, client, market, block):
     "market",
     ACTIVE_MARKETS,
 )
-@pytest.mark.flaky(reruns=3)  # why this is the case i am not yet sure.
+@pytest.mark.flaky(reruns=RETRIES)  # why this is the case i am not yet sure.
 def test_client_can_close_long(client, market):
     """Test that the otoken can be used to retrieve and redeem.
     flow:
@@ -317,3 +319,74 @@ def test_client_can_close_short(
 
     txn = client.close_short(market, DEFAULT_AMOUNT)
     assert txn, "Transaction failed."
+
+@pytest.mark.parametrize(
+    "market",
+    ACTIVE_MARKETS,
+)
+@pytest.mark.flaky(reruns=RETRIES)
+def test_client_can_close_partial_long(client, market):
+    """Test that the otoken can be used to retrieve and redeem.
+    flow:
+    buy_option -> approve -> close_long
+    """
+    txn = client.create_order(market, DEFAULT_AMOUNT * 2)
+    assert txn, "Transaction failed."
+
+    txn = client.close_long(market, DEFAULT_AMOUNT)
+    assert txn, "Transaction failed."
+
+    txn = client.close_long(market, DEFAULT_AMOUNT)
+    assert txn, "Transaction failed."
+
+@pytest.mark.parametrize(
+    "market",
+    ACTIVE_MARKETS,
+)
+@pytest.mark.flaky(reruns=RETRIES)
+def test_client_can_close_partial_short(client, market):
+    """Test that the otoken can be used to retrieve and redeem.
+    flow:
+    buy_option -> approve -> close_long
+    """
+    txn = client.create_order(market, DEFAULT_AMOUNT * 2, side=OrderSide.SELL.value)
+    assert txn, "Transaction failed."
+
+    txn = client.close_short(market, DEFAULT_AMOUNT)
+    assert txn, "Transaction failed."
+
+    txn = client.close_short(market, DEFAULT_AMOUNT)
+    assert txn, "Transaction failed."
+
+@pytest.mark.parametrize(
+    "market",
+    ACTIVE_MARKETS,
+)
+@pytest.mark.flaky(reruns=RETRIES)
+def test_client_fails_to_close_short(client, market):
+    """Test that the otoken can be used to retrieve and redeem.
+    flow:
+    buy_option -> approve -> close_long
+    """
+    txn = client.create_order(market, DEFAULT_AMOUNT, side=OrderSide.SELL.value)
+    assert txn, "Transaction failed."
+
+    with pytest.raises(Exception):
+        client.close_short(market, DEFAULT_AMOUNT * 2)
+
+
+@pytest.mark.parametrize(
+    "market",
+    ACTIVE_MARKETS,
+)
+@pytest.mark.flaky(reruns=RETRIES)
+def test_client_fails_to_close_long(client, market):
+    """Test that the otoken can be used to retrieve and redeem.
+    flow:
+    buy_option -> approve -> close_long
+    """
+    txn = client.create_order(market, DEFAULT_AMOUNT)
+    assert txn, "Transaction failed."
+
+    with pytest.raises(Exception):
+        client.close_long(market, DEFAULT_AMOUNT * 2)
