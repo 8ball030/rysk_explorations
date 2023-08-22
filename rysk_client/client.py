@@ -457,7 +457,7 @@ class RyskClient:  # noqa: R0902
 
         else:
             rysk_option_market.collateral = self.collateral_factory.WETH
-            amount_to_approve = int(_amount * (1 + ALLOWED_SLIPPAGE))
+            amount_to_approve = int(_amount)
             contract = self.web3_client.settlement_weth
         series = self.market_factory.to_series(rysk_option_market)
 
