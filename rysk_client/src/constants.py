@@ -128,8 +128,8 @@ SUPPORTED_CHAINS = [ARBITRUM, ARBITRUM_GOERLI]
 
 
 CHAINS_TO_SUBGRAPH_URL = {
-    ARBITRUM: "https://api.goldsky.com/api/public/project_clhf7zaco0n9j490ce421agn4/subgraphs/arbitrum-one/0.1.17/gn",
-    ARBITRUM_GOERLI: "https://api.goldsky.com/api/public/project_clhf7zaco0n9j490ce421agn4/subgraphs/devey/0.1.17/gn",
+    ARBITRUM: "https://api.goldsky.com/api/public/project_clhf7zaco0n9j490ce421agn4/subgraphs/arbitrum-one/production/gn",
+    ARBITRUM_GOERLI: "https://api.goldsky.com/api/public/project_clhf7zaco0n9j490ce421agn4/subgraphs/arbitrum-goerli/production/gn",
 }
 
 for chain in SUPPORTED_CHAINS:
