@@ -304,7 +304,7 @@ def list_trades(ctx, to_csv):
     for trade in trades:
         trades_list.append(
             {
-                "id": trade.id,
+                "id": trade.trade_id,
                 "market": trade.market,
                 "amount": trade.quantity,
                 "price": trade.price,

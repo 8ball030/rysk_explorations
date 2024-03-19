@@ -683,7 +683,9 @@ class RyskClient:  # noqa: R0902
     def fetch_trades(self):
         """List trades."""
         self._logger.info("Listing trades for every position in the subgraph...")
-        positions = self.fetch_positions()
+        positions = self.fetch_positions(expired=True) + self.fetch_positions(
+            expired=False
+        )
         tickers = {ticker["id"]: ticker for ticker in self.fetch_tickers()}
 
         all_trades = []
