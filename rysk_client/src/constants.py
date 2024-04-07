@@ -111,7 +111,7 @@ ARBITRUM = Chain(
 ARBITRUM_GOERLI = Chain(
     name="arbitrum-goerli",
     chain_id=421613,
-    rpc_url="https://arbitrum-goerli.rpc.thirdweb.com",
+    rpc_url="https://goerli-rollup.arbitrum.io/rpc",
     wss_url=WS_URL,
 )
 
@@ -128,8 +128,8 @@ SUPPORTED_CHAINS = [ARBITRUM, ARBITRUM_GOERLI]
 
 
 CHAINS_TO_SUBGRAPH_URL = {
-    ARBITRUM: "https://api.goldsky.com/api/public/project_clhf7zaco0n9j490ce421agn4/subgraphs/arbitrum-one/production/gn",
-    ARBITRUM_GOERLI: "https://api.goldsky.com/api/public/project_clhf7zaco0n9j490ce421agn4/subgraphs/arbitrum-goerli/production/gn",
+    ARBITRUM: "https://api.0xgraph.xyz/subgraphs/name/rysk/arbitrum-one",
+    ARBITRUM_GOERLI: "https://api.goldsky.com/api/public/project_clhf7zaco0n9j490ce421agn4/subgraphs/arbitrum-goerli/production/gn",  # noqa
 }
 
 for chain in SUPPORTED_CHAINS:

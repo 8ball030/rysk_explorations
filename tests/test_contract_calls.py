@@ -320,6 +320,7 @@ def test_client_can_close_short(
     txn = client.close_short(market, DEFAULT_AMOUNT)
     assert txn, "Transaction failed."
 
+
 @pytest.mark.parametrize(
     "market",
     ACTIVE_MARKETS,
@@ -339,6 +340,7 @@ def test_client_can_close_partial_long(client, market):
     txn = client.close_long(market, DEFAULT_AMOUNT)
     assert txn, "Transaction failed."
 
+
 @pytest.mark.parametrize(
     "market",
     ACTIVE_MARKETS,
@@ -357,6 +359,7 @@ def test_client_can_close_partial_short(client, market):
 
     txn = client.close_short(market, DEFAULT_AMOUNT)
     assert txn, "Transaction failed."
+
 
 @pytest.mark.parametrize(
     "market",
